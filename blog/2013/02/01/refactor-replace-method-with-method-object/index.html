@@ -1,0 +1,503 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Refactor: Replace Method with Method Object - Matteo Depalo's Blog</title>
+  <meta name="author" content="Matteo Depalo">
+
+  
+  <meta name="description" content="In my previous post I described how to implement a feature that allows our customers to create custom stylesheets for their widget.
+Altough it worked &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Matteo Depalo's Blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!-- <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css"> -->
+<!-- <link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css"> -->
+<link rel="stylesheet" type="text/css" href="//cloud.typography.com/7390232/803822/css/fonts.css" />
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-33611779-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Matteo Depalo's Blog</a></h1>
+  
+    <h2>Will driven life.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:matteodepalo.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Refactor: Replace Method With Method Object</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-01T11:40:00+01:00" pubdate data-updated="true">Feb 1<span>st</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>In my previous <a href="http://matteodepalo.github.com/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/">post</a> I described how to implement a feature that allows our customers to create custom stylesheets for their widget.
+Altough it worked just fine, the <code>compile</code> class method of the <code>CustomTheme</code> class was blatantly big, so I decided to refactor it.</p>
+
+<p>The biggest issue I faced was that since this was a class method, in order to split it I should have created many little class methods and pass around the theme instance; a solution that didn&rsquo;t satisfy me. The reason <code>compile</code> needed to stay a class method is that I don&rsquo;t want to serialize the whole <code>CustomTheme</code> object and pass it to Sidekiq. Having considered this premises I could proceed in two ways:</p>
+
+<ul>
+<li>Delegate the class method <code>compile</code> to an instance method of a new custom theme, something along the lines of:</li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">compile</span><span class="p">(</span><span class="n">theme_id</span><span class="p">)</span>
+</span><span class='line'> <span class="err"> </span><span class="no">CustomTheme</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">theme_id</span><span class="p">)</span><span class="o">.</span><span class="n">compile</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">compile</span>
+</span><span class='line'>  <span class="c1"># perform the actual compilation</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Create a class with the name of the method and extract everything there (thanks <a href="https://twitter.com/bugant">@bugant</a> for reminding me of this refactor)</li>
+</ul>
+
+
+<p>I decided to go with the latter so I followed these steps:</p>
+
+<ol>
+<li>Create the class ThemeCompiler</li>
+<li>Give the new class an attribute for the object that hosted the original method (theme) and an attribute for each temporary variable in the method</li>
+<li>Give the new class a method &ldquo;compute&rdquo;</li>
+<li>Copy the body of the original method into compute</li>
+<li>Split the compute method in smaller methods</li>
+</ol>
+
+
+<h2>Final considerations</h2>
+
+<p>The first approach has the advantage of keeping everything in one class and use encapsulation properly, however it forces you to keep temp variables at the top of the compile method and increases the length of the class.</p>
+
+<p>The second one puts every temp variables in the constructor but has the disadvantage of being envious of the <code>CustomTheme</code> class data to the point that it forces the promotion of one CustomTheme private method to public. Something like <a href="http://en.wikipedia.org/wiki/Friend_class">friend classes</a> would have helped in this refactor.</p>
+
+<p>The final result, indipendent of the methodology, is that the compile method is now much clearer.</p>
+
+<h2>The code</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># custom_theme.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">compile</span><span class="p">(</span><span class="n">theme_id</span><span class="p">)</span>
+</span><span class='line'>  <span class="no">ThemeCompiler</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">theme_id</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># theme_compiler.rb</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">ThemeCompiler</span>
+</span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:theme</span><span class="p">,</span> <span class="ss">:body</span><span class="p">,</span> <span class="ss">:tmp_themes_path</span><span class="p">,</span> <span class="ss">:tmp_asset_name</span><span class="p">,</span> <span class="ss">:widget</span><span class="p">,</span> <span class="ss">:compressed_body</span><span class="p">,</span> <span class="ss">:asset</span><span class="p">,</span> <span class="ss">:env</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">theme_id</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@theme</span> <span class="o">=</span> <span class="no">CustomTheme</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">theme_id</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@body</span> <span class="o">=</span> <span class="no">ERB</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">Rails</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s1">&#39;app&#39;</span><span class="p">,</span> <span class="s1">&#39;assets&#39;</span><span class="p">,</span> <span class="s1">&#39;stylesheets&#39;</span><span class="p">,</span> <span class="s1">&#39;widget_custom.scss.erb&#39;</span><span class="p">)))</span><span class="o">.</span><span class="n">result</span><span class="p">(</span><span class="n">theme</span><span class="o">.</span><span class="n">get_binding</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@tmp_themes_path</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">Rails</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s1">&#39;tmp&#39;</span><span class="p">,</span> <span class="s1">&#39;themes&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@tmp_asset_name</span> <span class="o">=</span> <span class="n">theme</span><span class="o">.</span><span class="n">widget_id</span><span class="o">.</span><span class="n">to_s</span>
+</span><span class='line'>    <span class="vi">@widget</span> <span class="o">=</span> <span class="n">theme</span><span class="o">.</span><span class="n">widget</span>
+</span><span class='line'>    <span class="vi">@env</span> <span class="o">=</span> <span class="k">if</span> <span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="ss">Sprockets</span><span class="p">:</span><span class="ss">:Index</span><span class="p">)</span>
+</span><span class='line'>      <span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">instance_variable_get</span><span class="p">(</span><span class="s1">&#39;@environment&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">assets</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">compute</span>
+</span><span class='line'>    <span class="n">create_temporary_file</span>
+</span><span class='line'>    <span class="n">compile</span>
+</span><span class='line'>    <span class="n">compress</span>
+</span><span class='line'>    <span class="n">upload</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">compile</span>
+</span><span class='line'>    <span class="vi">@asset</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">find_asset</span><span class="p">(</span><span class="n">tmp_asset_name</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">rescue</span> <span class="ss">Sass</span><span class="p">:</span><span class="ss">:SyntaxError</span> <span class="o">=&gt;</span> <span class="n">error</span>
+</span><span class='line'>    <span class="n">widget</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">notifications</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="ss">:message</span> <span class="o">=&gt;</span> <span class="n">error</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="sr">/ \(.+\)$/</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="ss">:type</span> <span class="o">=&gt;</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">theme</span><span class="o">.</span><span class="n">revert</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">compress</span>
+</span><span class='line'>    <span class="vi">@compressed_body</span> <span class="o">=</span> <span class="o">::</span><span class="ss">Sass</span><span class="p">:</span><span class="ss">:Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">asset</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>      <span class="ss">:syntax</span> <span class="o">=&gt;</span> <span class="ss">:scss</span><span class="p">,</span>
+</span><span class='line'>      <span class="ss">:cache</span> <span class="o">=&gt;</span> <span class="kp">false</span><span class="p">,</span>
+</span><span class='line'>      <span class="ss">:read_cache</span> <span class="o">=&gt;</span> <span class="kp">false</span><span class="p">,</span>
+</span><span class='line'>      <span class="ss">:style</span> <span class="o">=&gt;</span> <span class="ss">:compressed</span>
+</span><span class='line'>    <span class="p">})</span><span class="o">.</span><span class="n">render</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">create_temporary_file</span>
+</span><span class='line'>    <span class="no">FileUtils</span><span class="o">.</span><span class="n">mkdir_p</span><span class="p">(</span><span class="n">tmp_themes_path</span><span class="p">)</span> <span class="k">unless</span> <span class="no">File</span><span class="o">.</span><span class="n">directory?</span><span class="p">(</span><span class="n">tmp_themes_path</span><span class="p">)</span>
+</span><span class='line'>    <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tmp_themes_path</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">tmp_asset_name</span><span class="si">}</span><span class="s2">.scss&quot;</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span> <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">body</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">upload</span>
+</span><span class='line'>    <span class="n">theme</span><span class="o">.</span><span class="n">delete_asset</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="no">Rails</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">production?</span>
+</span><span class='line'>      <span class="no">FOG_STORAGE</span><span class="o">.</span><span class="n">directories</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;FOG_DIRECTORY&#39;</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">files</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+</span><span class='line'>        <span class="ss">:key</span>    <span class="o">=&gt;</span> <span class="n">theme</span><span class="o">.</span><span class="n">asset_path</span><span class="p">(</span><span class="n">asset</span><span class="o">.</span><span class="n">digest</span><span class="p">),</span>
+</span><span class='line'>        <span class="ss">:body</span>   <span class="o">=&gt;</span> <span class="no">StringIO</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">compressed_body</span><span class="p">),</span>
+</span><span class='line'>        <span class="ss">:public</span> <span class="o">=&gt;</span> <span class="kp">true</span><span class="p">,</span>
+</span><span class='line'>        <span class="ss">:content_type</span> <span class="o">=&gt;</span> <span class="s1">&#39;text/css&#39;</span>
+</span><span class='line'>      <span class="p">)</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">Rails</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">theme</span><span class="o">.</span><span class="n">asset_path</span><span class="p">(</span><span class="n">asset</span><span class="o">.</span><span class="n">digest</span><span class="p">)),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span> <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">compressed_body</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">theme</span><span class="o">.</span><span class="n">update_attribute</span><span class="p">(</span><span class="ss">:digest</span><span class="p">,</span> <span class="n">asset</span><span class="o">.</span><span class="n">digest</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Matteo Depalo</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-01T11:40:00+01:00" pubdate data-updated="true">Feb 1<span>st</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/rails/'>rails</a>, <a class='category' href='/blog/categories/refactoring/'>refactoring</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object/" data-via="matteodepalo" data-counturl="http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/" title="Previous Post: How to create custom stylesheets dynamically with Rails and Sass">&laquo; How to create custom stylesheets dynamically with Rails and Sass</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/" title="Next Post: How I migrated from Heroku to Digital Ocean with Chef and Capistrano">How I migrated from Heroku to Digital Ocean with Chef and Capistrano &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/rails-api-documentation/">Rails API Documentation</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/08/minimum-viable-stack/">Minimum Viable Stack</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/">How I Migrated From Heroku to Digital Ocean With Chef and Capistrano</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/02/01/refactor-replace-method-with-method-object/">Refactor: Replace Method With Method Object</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/">How to Create Custom Stylesheets Dynamically With Rails and Sass</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/matteodepalo">@matteodepalo</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'matteodepalo',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/102959180704550392673?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Matteo Depalo -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'matteodepalo';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object/';
+        var disqus_url = 'http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

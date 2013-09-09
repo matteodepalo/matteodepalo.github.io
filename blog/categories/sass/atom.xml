@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: sass | Matteo Depalo's Blog]]></title>
+  <link href="http://matteodepalo.github.io/blog/categories/sass/atom.xml" rel="self"/>
+  <link href="http://matteodepalo.github.io/"/>
+  <updated>2013-09-09T16:54:35+02:00</updated>
+  <id>http://matteodepalo.github.io/</id>
+  <author>
+    <name><![CDATA[Matteo Depalo]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[How to create custom stylesheets dynamically with Rails and Sass]]></title>
+    <link href="http://matteodepalo.github.io/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/"/>
+    <updated>2013-01-31T12:24:00+01:00</updated>
+    <id>http://matteodepalo.github.io/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass</id>
+    <content type="html"><![CDATA[<p>At <a href="http://goresponsa.com">Responsa</a> we have the need to create custom stylesheets for our widget administrators. In order to accomplish this we leverage the power of Sass and the Rails asset pipeline.</p>
+
+<p>In this blog post I&rsquo;ll show you how we implemented this feature and how to deploy it to an Heroku + Amazon S3 production environment.</p>
+
+<h2>Tools</h2>
+
+<p>Let&rsquo;s take a loot at our toolbelt:</p>
+
+<ul>
+<li>Sass and Sprockets to dynamically compile the asset</li>
+<li>Sidekiq to delay the compilation and upload to S3, which in our case takes between 10 and 15 seconds</li>
+<li>Fog gem to store on S3</li>
+</ul>
+
+
+<h2>Models</h2>
+
+<p>We have 2 models: Widget and CustomTheme</p>
+
+<p>```ruby
+class CustomTheme
+  include Mongoid::Document</p>
+
+<p>  belongs_to :widget</p>
+
+<p>  field :main_color, :type => String, :default => &ldquo;#2ba6cb&rdquo;
+  field :text_font, :type => String, :default => &ldquo;\"Helvetica Neue\&rdquo;, \&ldquo;Helvetica\&rdquo;, Helvetica, Arial, sans-serif"
+  field :digest, :type => String
+end
+```</p>
+
+<p>```ruby
+class Widget
+  include Mongoid::Document</p>
+
+<p>  has_one :custom_theme
+end
+```</p>
+
+<p>The custom theme model has the fields used in a widget_custom.scss stylesheet built with the <a href="http://foundation.zurb.com">Foundation</a> CSS framework:</p>
+
+<p>```css
+$mainColor: &lt;%= main_color %>;
+$bodyFontFamily: &lt;%= text_font %>;</p>
+
+<p>@import &ldquo;widget/index&rdquo;;
+```</p>
+
+<h2>Compilation</h2>
+
+<p>CustomTheme has a method we call every time we need to compile a fresh asset which occurs when the fields change. It performs a few actions in order:</p>
+
+<ol>
+<li>Write a temporary and not compiled scss file with the variables taken from the custom theme and give it a unique name.</li>
+<li>Use the Sprockets environment to find this temporary file and compile it.</li>
+<li>Compress the compiled css file.</li>
+<li>Store it either on amazon S3 or the file system.</li>
+<li>Delete the previous asset.</li>
+</ol>
+
+
+<h2>Caveats</h2>
+
+<p>Developing this solution we encountered a few problems mainly due to our production setup and the way Sprockets works:</p>
+
+<ul>
+<li>If the compilation fails we need to restore the previous asset. To accomplish this we basically keep track of the previous asset and revert to it if anything goes wrong.</li>
+<li>In production we need to avoid using the cached Sprockets environment, else Sprockets will cache the entire file system at the beginning.</li>
+<li>It&rsquo;s important to run validations of the custom theme fields in order to avoid css injection.</li>
+</ul>
+
+
+<h2>Code</h2>
+
+<p>```ruby</p>
+
+<h1>application.rb</h1>
+
+<p>config.assets.paths &lt;&lt; Rails.root.join(&lsquo;tmp&rsquo;, &lsquo;themes&rsquo;)
+```</p>
+
+<p>```ruby
+COMPILED_FIELDS = [:main_color, :text_font]</p>
+
+<p>after_save :compile, :if => :compiled_attributes_changed?</p>
+
+<p>def self.compile(theme_id)
+  theme = CustomTheme.find(theme_id)
+  body = ERB.new(File.read(File.join(Rails.root, &lsquo;app&rsquo;, &lsquo;assets&rsquo;, &lsquo;stylesheets&rsquo;, &lsquo;widget_custom.scss.erb&rsquo;))).result(theme.get_binding)
+  tmp_themes_path = File.join(Rails.root, &lsquo;tmp&rsquo;, &lsquo;themes&rsquo;)
+  tmp_asset_name = theme.widget_id.to_s</p>
+
+<p>  FileUtils.mkdir_p(tmp_themes_path) unless File.directory?(tmp_themes_path)
+  File.open(File.join(tmp_themes_path, &ldquo;#{tmp_asset_name}.scss&rdquo;), &lsquo;w&rsquo;) { |f| f.write(body) }</p>
+
+<p>  widget = theme.widget</p>
+
+<p>  begin</p>
+
+<pre><code>env = if Rails.application.assets.is_a?(Sprockets::Index)
+  Rails.application.assets.instance_variable_get('@environment')
+else
+  Rails.application.assets
+end
+
+asset = env.find_asset(tmp_asset_name)
+
+compressed_body = ::Sass::Engine.new(asset.body, {
+  :syntax =&gt; :scss,
+  :cache =&gt; false,
+  :read_cache =&gt; false,
+  :style =&gt; :compressed
+}).render
+
+theme.delete_asset
+
+if Rails.env.production?
+  FOG_STORAGE.directories.get(ENV['FOG_DIRECTORY']).files.create(
+    :key    =&gt; theme.asset_path(asset.digest),
+    :body   =&gt; StringIO.new(compressed_body),
+    :public =&gt; true,
+    :content_type =&gt; 'text/css'
+  )
+else
+  File.open(File.join(Rails.root, 'public', theme.asset_path(asset.digest)), 'w') { |f| f.write(compressed_body) }
+end
+
+theme.update_attribute(:digest, asset.digest)
+</code></pre>
+
+<p>  rescue Sass::SyntaxError => error</p>
+
+<pre><code>theme.revert
+</code></pre>
+
+<p>  end</p>
+
+<p>  widget.save
+end</p>
+
+<p>def revert
+  # Revert to your previous theme and notify the user of the failure
+end</p>
+
+<p>def get_binding
+  binding
+end</p>
+
+<p>def delete_asset
+  return unless digest?</p>
+
+<p>  if Rails.env.production?</p>
+
+<pre><code>FOG_STORAGE.directories.get(ENV['FOG_DIRECTORY']).files.get(asset_path).try(:destroy)
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>File.delete(File.join(Rails.root, 'public', asset_path))
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>def asset_path(digest)
+  &ldquo;assets/themes/#{asset_name(digest)}.css&rdquo;
+end</p>
+
+<p>def asset_name(digest = self.digest)
+   &ldquo;#{widget_id}&ndash;#{digest}&rdquo;
+end</p>
+
+<p>def asset_url
+  &ldquo;#{ActionController::Base.asset_host}/#{asset_path}&rdquo;
+end</p>
+
+<p>private</p>
+
+<p>def compile
+  self.class.delay.compile(id)
+end</p>
+
+<p>def compiled_attributes_changed?
+  changed_attributes.keys.map(&amp;:to_sym).any? { |f| COMPILED_FIELDS.include?(f) }
+end
+```</p>
+
+<p>Finally we use the asset url in our template:</p>
+
+<p><code>ruby
+&lt;%= stylesheet_link_tag @custom_theme.asset_url %&gt;
+</code></p>
+]]></content>
+  </entry>
+  
+</feed>

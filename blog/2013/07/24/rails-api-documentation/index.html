@@ -1,0 +1,535 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Rails API documentation - Matteo Depalo's Blog</title>
+  <meta name="author" content="Matteo Depalo">
+
+  
+  <meta name="description" content="Lately I&rsquo;ve been working on a new project for mobile called Playround. My job is to design and implement the API. I must say that with the help &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Matteo Depalo's Blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!-- <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css"> -->
+<!-- <link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css"> -->
+<link rel="stylesheet" type="text/css" href="//cloud.typography.com/7390232/803822/css/fonts.css" />
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-33611779-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Matteo Depalo's Blog</a></h1>
+  
+    <h2>Will driven life.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:matteodepalo.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Rails API Documentation</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-24T12:46:00+02:00" pubdate data-updated="true">Jul 24<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Lately I&rsquo;ve been working on a new project for mobile called Playround. My job is to design and implement the API. I must say that with the help of Rails 4 and Rails API the experience has been the smoothest possible. With requests and models specs I can test the whole application at blazing speeds.
+At a certain point however I faced an issue: documentation.</p>
+
+<p>Especially in the first stages of development, working inside a team mandates transparency about the current status of the API so the mobile developers know exactly what to expect from the server while testing locally.
+Of course documenting is exceptionally useful also for the mature stage of the project when we will have to publish the API documentation in a beautiful layout. In order to achieve documentation nirvana I started experimenting various ways of building it, possibly in a way that would output something I can use for our public doc.</p>
+
+<p>At first I started putting &ldquo;debugger&rdquo; in every test and printing the output of the response, however this task got tedious pretty fast. Looking around I found a <a href="https://github.com/zipmark/rspec_api_documentation">gem</a> that compiles a documentation, however it forced me to use a specific dsl which means I had to rewrite my tests. When I started I used the convention adopted by the first requests tests you find with scaffolds and I wanted to keep that.</p>
+
+<p>In order to achieve this I wrote a simple script in the spec helper that does the following things:</p>
+
+<ul>
+<li>For every request spec file it creates a corresponding txt file inside the doc folder.</li>
+<li>For each test the path, status, request and response are written inside the corresponding file.</li>
+</ul>
+
+
+<p>Request tests have to follow a convention:</p>
+
+<ul>
+<li>Top level descriptions are named after the model (plural form) followed by the word &ldquo;Requests&rdquo;. For the model Arena it would be &ldquo;Arenas Requests&rdquo;.</li>
+<li>Actions are in the form of &ldquo;VERB path&rdquo;. For the show action of the Arenas controller it would be &ldquo;GET /arenas/:id&rdquo;.</li>
+</ul>
+
+
+<p>The code:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">after</span><span class="p">(</span><span class="ss">:each</span><span class="p">,</span> <span class="ss">type</span><span class="p">:</span> <span class="ss">:request</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">response</span>
+</span><span class='line'>    <span class="n">example_group</span> <span class="o">=</span> <span class="n">example</span><span class="o">.</span><span class="n">metadata</span><span class="o">[</span><span class="ss">:example_group</span><span class="o">]</span>
+</span><span class='line'>    <span class="n">example_groups</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">while</span> <span class="n">example_group</span>
+</span><span class='line'>      <span class="n">example_groups</span> <span class="o">&lt;&lt;</span> <span class="n">example_group</span>
+</span><span class='line'>      <span class="n">example_group</span> <span class="o">=</span> <span class="n">example_group</span><span class="o">[</span><span class="ss">:example_group</span><span class="o">]</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">action</span> <span class="o">=</span> <span class="n">example_groups</span><span class="o">[-</span><span class="mi">2</span><span class="o">][</span><span class="ss">:description_args</span><span class="o">].</span><span class="n">first</span> <span class="k">if</span> <span class="n">example_groups</span><span class="o">[-</span><span class="mi">2</span><span class="o">]</span>
+</span><span class='line'>    <span class="n">example_groups</span><span class="o">[-</span><span class="mi">1</span><span class="o">][</span><span class="ss">:description_args</span><span class="o">].</span><span class="n">first</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sr">/(\w+)\sRequests/</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">file_name</span> <span class="o">=</span> <span class="vg">$1</span><span class="o">.</span><span class="n">underscore</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">Rails</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;/docs/</span><span class="si">#{</span><span class="n">file_name</span><span class="si">}</span><span class="s2">.txt&quot;</span><span class="p">),</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">f</span><span class="o">.</span><span class="n">write</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">action</span><span class="si">}</span><span class="s2"> </span><span class="se">\n\n</span><span class="s2">&quot;</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">request_body</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">read</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">[</span><span class="s1">&#39;Authorization&#39;</span><span class="o">]</span>
+</span><span class='line'>        <span class="n">f</span><span class="o">.</span><span class="n">write</span> <span class="s2">&quot;Headers: </span><span class="se">\n\n</span><span class="s2">&quot;</span>
+</span><span class='line'>        <span class="n">f</span><span class="o">.</span><span class="n">write</span> <span class="s2">&quot;Authorization: </span><span class="si">#{</span><span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">[</span><span class="s1">&#39;Authorization&#39;</span><span class="o">]</span><span class="si">}</span><span class="s2"> </span><span class="se">\n\n</span><span class="s2">&quot;</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">if</span> <span class="n">request_body</span><span class="o">.</span><span class="n">present?</span>
+</span><span class='line'>        <span class="n">f</span><span class="o">.</span><span class="n">write</span> <span class="s2">&quot;Request body: </span><span class="se">\n\n</span><span class="s2">&quot;</span>
+</span><span class='line'>        <span class="n">f</span><span class="o">.</span><span class="n">write</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="no">JSON</span><span class="o">.</span><span class="n">pretty_generate</span><span class="p">(</span><span class="no">JSON</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">request_body</span><span class="p">))</span><span class="si">}</span><span class="s2"> </span><span class="se">\n\n</span><span class="s2">&quot;</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">f</span><span class="o">.</span><span class="n">write</span> <span class="s2">&quot;Status: </span><span class="si">#{</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2"> </span><span class="se">\n\n</span><span class="s2">&quot;</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">present?</span>
+</span><span class='line'>        <span class="n">f</span><span class="o">.</span><span class="n">write</span> <span class="s2">&quot;Response body: </span><span class="se">\n\n</span><span class="s2">&quot;</span>
+</span><span class='line'>        <span class="n">f</span><span class="o">.</span><span class="n">write</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="no">JSON</span><span class="o">.</span><span class="n">pretty_generate</span><span class="p">(</span><span class="no">JSON</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">body</span><span class="p">))</span><span class="si">}</span><span class="s2"> </span><span class="se">\n\n</span><span class="s2">&quot;</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span> <span class="k">unless</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="mi">401</span> <span class="o">||</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="mi">403</span> <span class="o">||</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="mi">301</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Example output for &ldquo;Rounds Requests&rdquo; POST action:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">POST</span> <span class="sr">/v1/</span><span class="n">rounds</span>
+</span><span class='line'>
+</span><span class='line'><span class="ss">Headers</span><span class="p">:</span>
+</span><span class='line'>
+</span><span class='line'><span class="ss">Authorization</span><span class="p">:</span> <span class="no">Token</span> <span class="n">token</span><span class="o">=</span><span class="s2">&quot;36260243e091bfe56f96483592afc723&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Request</span> <span class="ss">body</span><span class="p">:</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="s2">&quot;round&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="s2">&quot;game_name&quot;</span><span class="p">:</span> <span class="s2">&quot;dota2&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;arena&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="s2">&quot;foursquare_id&quot;</span><span class="p">:</span> <span class="s2">&quot;5104&quot;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="ss">Status</span><span class="p">:</span> <span class="mi">201</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Response</span> <span class="ss">body</span><span class="p">:</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="s2">&quot;round&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;ec6add8b-709f-475d-8f06-8ad44d8a95d3&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;state&quot;</span><span class="p">:</span> <span class="s2">&quot;waiting_for_players&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;created_at&quot;</span><span class="p">:</span> <span class="s2">&quot;2013-07-24T12:16:14.700Z&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;game&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;1c59b30e-599a-4ea1-9d5c-a364079528ad&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;dota2&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;display_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Dota 2&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;picture_url&quot;</span><span class="p">:</span> <span class="s2">&quot;http://localhost:8080/assets/dota2.jpg&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;teams&quot;</span><span class="p">:</span> <span class="o">[</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>          <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;radiant&quot;</span><span class="p">,</span>
+</span><span class='line'>          <span class="s2">&quot;display_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Radiant&quot;</span><span class="p">,</span>
+</span><span class='line'>          <span class="s2">&quot;number_of_players&quot;</span><span class="p">:</span> <span class="mi">5</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>          <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;dire&quot;</span><span class="p">,</span>
+</span><span class='line'>          <span class="s2">&quot;display_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Dire&quot;</span><span class="p">,</span>
+</span><span class='line'>          <span class="s2">&quot;number_of_players&quot;</span><span class="p">:</span> <span class="mi">5</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>      <span class="o">]</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="s2">&quot;arena&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;5c593125-a114-4a1a-936f-2cc4b21fa0a8&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Clinton St. Baking Co. &amp; Restaurant&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;latitude&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="o">.</span><span class="mi">721294</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;longitude&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">73</span><span class="o">.</span><span class="mi">983994</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;foursquare_id&quot;</span><span class="p">:</span> <span class="s2">&quot;5104&quot;</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="s2">&quot;teams&quot;</span><span class="p">:</span> <span class="o">[</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="o">]</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;user&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;87fb0fe4-2f0c-400d-ba00-000c3f5ea642&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Test User&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;picture_url&quot;</span><span class="p">:</span> <span class="s2">&quot;http://graph.facebook.com/12132/picture?type=square&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;facebook_id&quot;</span><span class="p">:</span> <span class="s2">&quot;12132&quot;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I&rsquo;m excluding 401, 403 and 301 status codes because those cases are grouped and documented inside a common area in my documentation, but there is nothing special about them.</p>
+
+<p>Now to the beautiful layout part. Right now I&rsquo;m copy pasting those response and requests bodies inside the templates of a <a href="https://github.com/playround/playround-developer">Jekyll application</a> hosted on <a href="http://developer.goplayround.com">Github Pages</a>. One way to automate this would be to use a templating language in order to output html documents instead of plain txt files. Since the production documentation should change way less frequently than the development one, this is a automation I can skip for now. It&rsquo;s far more important to keep a fresh copy of the features for internal usage, which can be rebuilt anytime by anyone with no effort.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Matteo Depalo</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-24T12:46:00+02:00" pubdate data-updated="true">Jul 24<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/api/'>api</a>, <a class='category' href='/blog/categories/documentation/'>documentation</a>, <a class='category' href='/blog/categories/rails/'>rails</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation/" data-via="matteodepalo" data-counturl="http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/04/08/minimum-viable-stack/" title="Previous Post: minimum viable stack">&laquo; minimum viable stack</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/rails-api-documentation/">Rails API Documentation</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/08/minimum-viable-stack/">Minimum Viable Stack</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/">How I Migrated From Heroku to Digital Ocean With Chef and Capistrano</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/02/01/refactor-replace-method-with-method-object/">Refactor: Replace Method With Method Object</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/">How to Create Custom Stylesheets Dynamically With Rails and Sass</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/matteodepalo">@matteodepalo</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'matteodepalo',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/102959180704550392673?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Matteo Depalo -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'matteodepalo';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation/';
+        var disqus_url = 'http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

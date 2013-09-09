@@ -1,0 +1,1152 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>How I migrated from Heroku to Digital Ocean with Chef and Capistrano - Matteo Depalo's Blog</title>
+  <meta name="author" content="Matteo Depalo">
+
+  
+  <meta name="description" content="UPDATE: Removed ElasticSearch and MongoDB recipes since they were not so useful for this tutorial.
+Added unicorn.rb
+Added ssh authentication step &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Matteo Depalo's Blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<!-- <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css"> -->
+<!-- <link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css"> -->
+<link rel="stylesheet" type="text/css" href="//cloud.typography.com/7390232/803822/css/fonts.css" />
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-33611779-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Matteo Depalo's Blog</a></h1>
+  
+    <h2>Will driven life.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:matteodepalo.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">How I Migrated From Heroku to Digital Ocean With Chef and Capistrano</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-07T11:24:00+01:00" pubdate data-updated="true">Mar 7<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>UPDATE:</p>
+
+<ul>
+<li>Removed ElasticSearch and MongoDB recipes since they were not so useful for this tutorial.</li>
+<li>Added unicorn.rb</li>
+<li>Added ssh authentication step</li>
+<li>Added file paths</li>
+</ul>
+
+
+<p>I&rsquo;ve always loved deploying to Heroku. The simplicity of a git push let me focus on developing my applications which is what I really care about. However, both because of the <a href="http://rapgenius.com/James-somers-herokus-ugly-secret-lyrics">scandal about the routing system</a> and because I wanted to expand my skill set by entering the sysadmin land, at <a href="https://goresponsa.com">Responsa</a> I decided to migrate to a VPS solution.</p>
+
+<p>At this point I had three choices to make:</p>
+
+<ol>
+<li>Hosting provider</li>
+<li>Technology stack</li>
+<li>Deploy strategy</li>
+</ol>
+
+
+<h2>Provider</h2>
+
+<p>Many hackers I follow were recommending <a href="https://www.digitalocean.com/">Digital Ocean</a> so I gave it a try. I must say I was very impressed with the simplicity and power of their dashboard, so I decided to use it.</p>
+
+<p>I immediately changed my root password</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>passwd</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Copied over my ssh key with</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ssh-copy-id root@$IP</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And disabled password access setting <code>PasswordAuthentication no</code> in <code>/etc/ssh/sshd_config</code></p>
+
+<h2>Technology</h2>
+
+<p>The decision of the web server was also quick. I wanted to achieve 0 downtime deployments so Github use of <a href="https://github.com/blog/517-unicorn">Unicorn + Nginx</a> jumped to my mind.</p>
+
+<h2>Deploy strategy</h2>
+
+<p>This is where things got a little bit complicated. Disclaimer: I&rsquo;m not a Linux/Unix pro, so many system administration practices where unknown to me prior to this week. Having said that, It was clear to me that the community is very fragmented. There were so many solutions to the same problems and so many scripts! After digging, trying and failing miserably I settled on the stack that caused me the least suffering:</p>
+
+<ol>
+<li>Chef solo and Knife for the machine provisioning</li>
+<li>Capistrano for the deployment</li>
+</ol>
+
+
+<h2>Chef</h2>
+
+<p><a href="http://www.opscode.com/chef/">Chef</a> is a provisioning tool written in Ruby. Its DSL is very expressive and powerful. The community is full of useful cookbooks that ease the setup of common services, however it seemed to lack a way to handle community cookbooks. This is where <a href="https://github.com/applicationsonline/librarian-chef">Librarian Chef</a> comes in. I just had to write a Cheffile with all the dependencies and I was done.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># Cheffile</span>
+</span><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
+</span><span class='line'><span class="c1">#^syntax detection</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">site</span> <span class="s1">&#39;http://community.opscode.com/api/v1&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">cookbook</span> <span class="s1">&#39;libqt4&#39;</span><span class="p">,</span>
+</span><span class='line'>  <span class="ss">:git</span> <span class="o">=&gt;</span> <span class="s1">&#39;https://github.com/phlipper/chef-libqt4&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">cookbook</span> <span class="s1">&#39;nodejs&#39;</span>
+</span><span class='line'><span class="n">cookbook</span> <span class="s1">&#39;nginx&#39;</span>
+</span><span class='line'><span class="n">cookbook</span> <span class="s1">&#39;runit&#39;</span>
+</span><span class='line'><span class="n">cookbook</span> <span class="s1">&#39;java&#39;</span>
+</span><span class='line'><span class="n">cookbook</span> <span class="s1">&#39;imagemagick&#39;</span>
+</span><span class='line'><span class="n">cookbook</span> <span class="s1">&#39;vim&#39;</span>
+</span><span class='line'><span class="n">cookbook</span> <span class="s1">&#39;ruby_build&#39;</span><span class="p">,</span> <span class="ss">:git</span> <span class="o">=&gt;</span> <span class="s1">&#39;git://github.com/fnichol/chef-ruby_build.git&#39;</span>
+</span><span class='line'><span class="n">cookbook</span> <span class="s1">&#39;rbenv&#39;</span><span class="p">,</span> <span class="ss">:git</span> <span class="o">=&gt;</span> <span class="s1">&#39;git://github.com/fnichol/chef-rbenv.git&#39;</span>
+</span><span class='line'><span class="n">cookbook</span> <span class="s1">&#39;redis&#39;</span><span class="p">,</span> <span class="ss">:git</span> <span class="o">=&gt;</span> <span class="s1">&#39;git://github.com/cassianoleal/chef-redis.git&#39;</span>
+</span><span class='line'><span class="n">cookbook</span> <span class="s1">&#39;memcached&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To bootstrap the machine with Chef and Ruby many people where using custom Knife templates that were not working for me. Some installed ruby with RVM, others with rbenv. In the end I found <a href="http://matschaffer.github.com/knife-solo/">Knife Solo</a> that solved all my problems. With one command after the initialization I could install Chef AND run all my recipes to install Ruby and every other service I needed.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">knife</span> <span class="n">solo</span> <span class="n">init</span>
+</span><span class='line'><span class="n">knife</span> <span class="n">solo</span> <span class="n">bootstrap</span> <span class="n">root</span><span class="err">@</span><span class="vg">$IP</span> <span class="n">node</span><span class="o">.</span><span class="n">json</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Librarian and Knife Solo forced me to use a specific project structure:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">mychefrepo</span><span class="o">/</span>
+</span><span class='line'><span class="err">├──</span> <span class="n">cookbooks</span>
+</span><span class='line'><span class="err">├──</span> <span class="n">site</span><span class="o">-</span><span class="n">cookbooks</span>
+</span><span class='line'><span class="err">├──</span> <span class="no">Cheffile</span>
+</span><span class='line'><span class="err">├──</span> <span class="no">Cheffile</span><span class="o">.</span><span class="n">lock</span>
+</span><span class='line'><span class="err">└──</span> <span class="n">node</span><span class="o">.</span><span class="n">json</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The node.json contains the run list of recipes:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;user&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;deployer&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;password&quot;</span><span class="p">:</span> <span class="err">$PASSWORD</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nt">&quot;environment&quot;</span><span class="p">:</span> <span class="s2">&quot;production&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;server_name&quot;</span><span class="p">:</span> <span class="s2">&quot;goresponsa.com&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;deploy_to&quot;</span><span class="p">:</span> <span class="s2">&quot;/var/www/responsa&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;ruby-version&quot;</span><span class="p">:</span> <span class="s2">&quot;1.9.3-p286&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;run_list&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[vim]&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[libqt4]&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[imagemagick]&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[java]&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[redis::source]&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[memcached]&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[nodejs]&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[ruby_build]&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[rbenv::system]&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[runit]&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[nginx]&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[main]&quot;</span>
+</span><span class='line'>  <span class="p">]</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>All recipes except the &ldquo;main&rdquo; one are taken from community cookbooks.</p>
+
+<p>The main recipe contains machine/application specific setup:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># chef/site-cookbooks/main/recipes/default.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># setup</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">rbenv_ruby</span> <span class="n">node</span><span class="o">[</span><span class="s1">&#39;ruby-version&#39;</span><span class="o">]</span>
+</span><span class='line'><span class="n">rbenv_global</span> <span class="n">node</span><span class="o">[</span><span class="s1">&#39;ruby-version&#39;</span><span class="o">]</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">rbenv_gem</span> <span class="s1">&#39;bundler&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">group</span> <span class="s1">&#39;admin&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">gid</span> <span class="mi">420</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">user</span> <span class="n">node</span><span class="o">[</span><span class="ss">:user</span><span class="o">][</span><span class="ss">:name</span><span class="o">]</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">password</span> <span class="n">node</span><span class="o">[</span><span class="ss">:user</span><span class="o">][</span><span class="ss">:password</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">gid</span> <span class="s1">&#39;admin&#39;</span>
+</span><span class='line'>  <span class="n">home</span> <span class="s2">&quot;/home/</span><span class="si">#{</span><span class="n">node</span><span class="o">[</span><span class="ss">:user</span><span class="o">][</span><span class="ss">:name</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="n">shell</span> <span class="s1">&#39;/bin/bash&#39;</span>
+</span><span class='line'>  <span class="n">supports</span> <span class="ss">:manage_home</span> <span class="o">=&gt;</span> <span class="kp">true</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">directory</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">node</span><span class="o">[</span><span class="ss">:deploy_to</span><span class="o">]</span><span class="si">}</span><span class="s2">/tmp/sockets&quot;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">owner</span> <span class="n">node</span><span class="o">[</span><span class="ss">:user</span><span class="o">][</span><span class="ss">:name</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">group</span> <span class="s1">&#39;admin&#39;</span>
+</span><span class='line'>  <span class="n">recursive</span> <span class="kp">true</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># certificates</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">directory</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">node</span><span class="o">[</span><span class="ss">:deploy_to</span><span class="o">]</span><span class="si">}</span><span class="s2">/certificate&quot;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">owner</span> <span class="n">node</span><span class="o">[</span><span class="ss">:user</span><span class="o">][</span><span class="ss">:name</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">recursive</span> <span class="kp">true</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">cookbook_file</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">node</span><span class="o">[</span><span class="ss">:deploy_to</span><span class="o">]</span><span class="si">}</span><span class="s2">/certificate/</span><span class="si">#{</span><span class="n">node</span><span class="o">[</span><span class="ss">:environment</span><span class="o">]</span><span class="si">}</span><span class="s2">.crt&quot;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">source</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">node</span><span class="o">[</span><span class="ss">:environment</span><span class="o">]</span><span class="si">}</span><span class="s2">.crt&quot;</span>
+</span><span class='line'>  <span class="n">action</span> <span class="ss">:create_if_missing</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">cookbook_file</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">node</span><span class="o">[</span><span class="ss">:deploy_to</span><span class="o">]</span><span class="si">}</span><span class="s2">/certificate/</span><span class="si">#{</span><span class="n">node</span><span class="o">[</span><span class="ss">:environment</span><span class="o">]</span><span class="si">}</span><span class="s2">.key&quot;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">source</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">node</span><span class="o">[</span><span class="ss">:environment</span><span class="o">]</span><span class="si">}</span><span class="s2">.key&quot;</span>
+</span><span class='line'>  <span class="n">action</span> <span class="ss">:create_if_missing</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># configuration</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">template</span> <span class="s1">&#39;/etc/nginx/sites-enabled/default&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">source</span> <span class="s1">&#39;nginx.erb&#39;</span>
+</span><span class='line'>  <span class="n">owner</span> <span class="s1">&#39;root&#39;</span>
+</span><span class='line'>  <span class="n">group</span> <span class="s1">&#39;root&#39;</span>
+</span><span class='line'>  <span class="n">mode</span> <span class="mo">0644</span>
+</span><span class='line'>  <span class="n">notifies</span> <span class="ss">:restart</span><span class="p">,</span> <span class="s1">&#39;service[nginx]&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">[</span><span class="s2">&quot;sv&quot;</span><span class="p">,</span> <span class="s2">&quot;service&quot;</span><span class="o">].</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">dir</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">directory</span> <span class="s2">&quot;/home/</span><span class="si">#{</span><span class="n">node</span><span class="o">[</span><span class="ss">:user</span><span class="o">][</span><span class="ss">:name</span><span class="o">]</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">dir</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">owner</span> <span class="n">node</span><span class="o">[</span><span class="ss">:user</span><span class="o">][</span><span class="ss">:name</span><span class="o">]</span>
+</span><span class='line'>    <span class="n">group</span> <span class="s1">&#39;admin&#39;</span>
+</span><span class='line'>    <span class="n">recursive</span> <span class="kp">true</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">runit_service</span> <span class="s2">&quot;runsvdir-</span><span class="si">#{</span><span class="n">node</span><span class="o">[</span><span class="ss">:user</span><span class="o">][</span><span class="ss">:name</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">default_logger</span> <span class="kp">true</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">runit_service</span> <span class="s1">&#39;responsa&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">sv_dir</span> <span class="s2">&quot;/home/</span><span class="si">#{</span><span class="n">node</span><span class="o">[</span><span class="ss">:user</span><span class="o">][</span><span class="ss">:name</span><span class="o">]</span><span class="si">}</span><span class="s2">/sv&quot;</span>
+</span><span class='line'>  <span class="n">service_dir</span> <span class="s2">&quot;/home/</span><span class="si">#{</span><span class="n">node</span><span class="o">[</span><span class="ss">:user</span><span class="o">][</span><span class="ss">:name</span><span class="o">]</span><span class="si">}</span><span class="s2">/service&quot;</span>
+</span><span class='line'>  <span class="n">owner</span> <span class="n">node</span><span class="o">[</span><span class="ss">:user</span><span class="o">][</span><span class="ss">:name</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">group</span> <span class="s1">&#39;admin&#39;</span>
+</span><span class='line'>  <span class="n">restart_command</span> <span class="s1">&#39;2&#39;</span>
+</span><span class='line'>  <span class="n">restart_on_update</span> <span class="kp">false</span>
+</span><span class='line'>  <span class="n">default_logger</span> <span class="kp">true</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">service</span> <span class="s1">&#39;nginx&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I&rsquo;m using runit to manage the unicorn service that is declared in a template file:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># chef/site-cookbooks/main/templates/default/sv-runsvdir-deployer-run.erb</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">#!/bin/sh</span>
+</span><span class='line'><span class="nb">exec</span> <span class="mi">2</span><span class="o">&gt;&amp;</span><span class="mi">1</span>
+</span><span class='line'><span class="nb">exec</span> <span class="n">chpst</span> <span class="o">-</span><span class="n">u</span> <span class="n">deployer</span> <span class="n">runsvdir</span> <span class="sr">/home/</span><span class="n">deployer</span><span class="o">/</span><span class="n">service</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># chef/site-cookbooks/main/templates/default/sv-responsa-run.erb</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">#!/bin/bash</span>
+</span><span class='line'><span class="nb">exec</span> <span class="mi">2</span><span class="o">&gt;&amp;</span><span class="mi">1</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="sx">% unicorn_command </span><span class="o">=</span> <span class="vi">@options</span><span class="o">[</span><span class="ss">:unicorn_command</span><span class="o">]</span> <span class="o">||</span> <span class="s1">&#39;unicorn_rails&#39;</span> <span class="o">-</span><span class="sx">%&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sx">#</span>
+</span><span class='line'><span class="sx"># Since unicorn creates a new pid on restart/reload, it needs a little extra love to</span>
+</span><span class='line'><span class="sx"># manage with runit. Instead of managing unicorn directly, we simply trap signal calls</span>
+</span><span class='line'><span class="sx"># to the service and redirect them to unicorn directly.</span>
+</span><span class='line'>
+</span><span class='line'><span class="sx">function is_unicorn_alive {</span>
+</span><span class='line'><span class="sx">    set +e</span>
+</span><span class='line'><span class="sx">    if [ -n $1 ] &amp;&amp; kill -0 $1 &gt;</span><span class="sr">/dev/nu</span><span class="n">ll</span> <span class="mi">2</span><span class="o">&gt;&amp;</span><span class="mi">1</span><span class="p">;</span> <span class="k">then</span>
+</span><span class='line'>        <span class="n">echo</span> <span class="s2">&quot;yes&quot;</span>
+</span><span class='line'>    <span class="n">fi</span>
+</span><span class='line'>    <span class="n">set</span> <span class="o">-</span><span class="n">e</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">echo</span> <span class="s2">&quot;Service PID: $$&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">CUR_PID_FILE</span><span class="o">=</span><span class="sr">/var/</span><span class="n">www</span><span class="o">/</span><span class="n">responsa</span><span class="o">/</span><span class="n">shared</span><span class="o">/</span><span class="n">pids</span><span class="o">/</span><span class="n">unicorn</span><span class="o">.</span><span class="n">pid</span>
+</span><span class='line'><span class="no">OLD_PID_FILE</span><span class="o">=</span><span class="vg">$CUR_PID_FILE</span><span class="o">.</span><span class="n">oldbin</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="o">[</span> <span class="o">-</span><span class="n">e</span> <span class="vg">$OLD_PID_FILE</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+</span><span class='line'>    <span class="no">OLD_PID</span><span class="o">=</span><span class="err">$</span><span class="p">(</span><span class="n">cat</span> <span class="vg">$OLD_PID_FILE</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">echo</span> <span class="s2">&quot;Waiting for existing master ($OLD_PID) to exit&quot;</span>
+</span><span class='line'>    <span class="k">while</span> <span class="o">[</span> <span class="o">-</span><span class="n">n</span> <span class="s2">&quot;$(is_unicorn_alive $OLD_PID)&quot;</span> <span class="o">]</span><span class="p">;</span> <span class="k">do</span>
+</span><span class='line'>        <span class="sr">/bin/e</span><span class="n">cho</span> <span class="o">-</span><span class="n">n</span> <span class="s1">&#39;.&#39;</span>
+</span><span class='line'>        <span class="nb">sleep</span> <span class="mi">2</span>
+</span><span class='line'>    <span class="n">done</span>
+</span><span class='line'><span class="n">fi</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="o">[</span> <span class="o">-</span><span class="n">e</span> <span class="vg">$CUR_PID_FILE</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+</span><span class='line'>    <span class="no">CUR_PID</span><span class="o">=</span><span class="err">$</span><span class="p">(</span><span class="n">cat</span> <span class="vg">$CUR_PID_FILE</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">[</span> <span class="o">-</span><span class="n">n</span> <span class="s2">&quot;$(is_unicorn_alive $CUR_PID)&quot;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+</span><span class='line'>        <span class="n">echo</span> <span class="s2">&quot;Unicorn master already running. PID: $CUR_PID&quot;</span>
+</span><span class='line'>        <span class="no">RUNNING</span><span class="o">=</span><span class="kp">true</span>
+</span><span class='line'>    <span class="n">fi</span>
+</span><span class='line'><span class="n">fi</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="o">[</span> <span class="o">!</span> <span class="vg">$RUNNING</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+</span><span class='line'>    <span class="n">echo</span> <span class="s2">&quot;Starting unicorn&quot;</span>
+</span><span class='line'>    <span class="n">cd</span> <span class="sr">/var/</span><span class="n">www</span><span class="o">/</span><span class="n">responsa</span><span class="o">/</span><span class="n">current</span>
+</span><span class='line'>    <span class="n">export</span> <span class="no">PATH</span><span class="o">=</span><span class="s2">&quot;/usr/local/rbenv/shims:/usr/local/rbenv/bin:$PATH&quot;</span>
+</span><span class='line'>    <span class="c1"># You need to daemonize the unicorn process, http://unicorn.bogomips.org/unicorn_rails_1.html</span>
+</span><span class='line'>    <span class="n">bundle</span> <span class="nb">exec</span> <span class="o">&lt;</span><span class="sx">%= unicorn_command %&gt; -c config/unicorn.rb -E &lt;%=</span> <span class="vi">@options</span><span class="o">[</span><span class="ss">:environment</span><span class="o">]</span> <span class="o">||</span> <span class="s1">&#39;staging&#39;</span> <span class="o">%&gt;</span> <span class="o">-</span><span class="n">D</span>
+</span><span class='line'>    <span class="nb">sleep</span> <span class="mi">3</span>
+</span><span class='line'>    <span class="no">CUR_PID</span><span class="o">=</span><span class="err">$</span><span class="p">(</span><span class="n">cat</span> <span class="vg">$CUR_PID_FILE</span><span class="p">)</span>
+</span><span class='line'><span class="n">fi</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">function</span> <span class="n">restart</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">echo</span> <span class="s2">&quot;Initialize new master with USR2&quot;</span>
+</span><span class='line'>    <span class="n">kill</span> <span class="o">-</span><span class="no">USR2</span> <span class="vg">$CUR_PID</span>
+</span><span class='line'>    <span class="c1"># Make runit restart to pick up new unicorn pid</span>
+</span><span class='line'>    <span class="nb">sleep</span> <span class="mi">2</span>
+</span><span class='line'>    <span class="n">echo</span> <span class="s2">&quot;Restarting service to capture new pid&quot;</span>
+</span><span class='line'>    <span class="nb">exit</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">function</span> <span class="n">graceful_shutdown</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">echo</span> <span class="s2">&quot;Initializing graceful shutdown&quot;</span>
+</span><span class='line'>    <span class="n">kill</span> <span class="o">-</span><span class="no">QUIT</span> <span class="vg">$CUR_PID</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">function</span> <span class="n">unicorn_interrupted</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">echo</span> <span class="s2">&quot;Unicorn process interrupted. Possibly a runit thing?&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">trap</span> <span class="n">restart</span> <span class="no">HUP</span> <span class="no">QUIT</span> <span class="no">USR2</span> <span class="no">INT</span>
+</span><span class='line'><span class="nb">trap</span> <span class="n">graceful_shutdown</span> <span class="no">TERM</span> <span class="no">KILL</span>
+</span><span class='line'><span class="nb">trap</span> <span class="n">unicorn_interrupted</span> <span class="no">ALRM</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">echo</span> <span class="s2">&quot;Waiting for current master to die. PID: ($CUR_PID)&quot;</span>
+</span><span class='line'><span class="k">while</span> <span class="o">[</span> <span class="o">-</span><span class="n">n</span> <span class="s2">&quot;$(is_unicorn_alive $CUR_PID)&quot;</span> <span class="o">]</span><span class="p">;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="sr">/bin/e</span><span class="n">cho</span> <span class="o">-</span><span class="n">n</span> <span class="s1">&#39;.&#39;</span>
+</span><span class='line'>    <span class="nb">sleep</span> <span class="mi">2</span>
+</span><span class='line'><span class="n">done</span>
+</span><span class='line'><span class="n">echo</span> <span class="s2">&quot;You&#39;ve killed a unicorn!&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Nginx is used as a reverse proxy:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># chef/site-cookbooks/main/templates/default/nginx.erb</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">upstream</span> <span class="n">unicorn</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">server</span> <span class="ss">unix</span><span class="p">:</span><span class="sr">/var/</span><span class="n">www</span><span class="o">/</span><span class="n">responsa</span><span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">sockets</span><span class="o">/</span><span class="n">responsa</span><span class="o">.</span><span class="n">sock</span> <span class="n">fail_timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">server</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">listen</span> <span class="mi">80</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">listen</span> <span class="mi">443</span> <span class="n">default</span> <span class="n">ssl</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">server_name</span> <span class="o">&lt;</span><span class="sx">%= node[:server_name] %&gt;;</span>
+</span><span class='line'><span class="sx">  root /var/www/responsa/current/public;</span>
+</span><span class='line'><span class="sx">  # set far-future expiration headers on static content</span>
+</span><span class='line'><span class="sx">  expires max;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sx">  server_tokens off;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sx">  # ssl                  on;</span>
+</span><span class='line'><span class="sx">  ssl_certificate      &lt;%=</span> <span class="s2">&quot;/var/www/responsa/certificate/</span><span class="si">#{</span><span class="n">node</span><span class="o">[</span><span class="ss">:environment</span><span class="o">]</span><span class="si">}</span><span class="s2">.crt&quot;</span> <span class="sx">%&gt;;</span>
+</span><span class='line'><span class="sx">  ssl_certificate_key  &lt;%= &quot;/var/www/responsa/certificate/</span><span class="si">#{</span><span class="n">node</span><span class="o">[</span><span class="ss">:environment</span><span class="o">]</span><span class="si">}</span><span class="sx">.key&quot; %&gt;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">ssl_session_timeout</span>  <span class="mi">5</span><span class="n">m</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">ssl_protocols</span>  <span class="no">SSLv2</span> <span class="no">SSLv3</span> <span class="no">TLSv1</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">ssl_ciphers</span>  <span class="ss">HIGH</span><span class="p">:</span><span class="o">!</span><span class="ss">aNULL</span><span class="p">:</span><span class="o">!</span><span class="no">MD5</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">ssl_prefer_server_ciphers</span>   <span class="n">on</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># set up the rails servers as a virtual location for use later</span>
+</span><span class='line'>  <span class="n">location</span> <span class="vi">@unicorn</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">proxy_set_header</span> <span class="no">Host</span> <span class="vg">$host</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">proxy_set_header</span> <span class="n">X</span><span class="o">-</span><span class="no">Real</span><span class="o">-</span><span class="no">IP</span>  <span class="vg">$remote_addr</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">proxy_set_header</span> <span class="n">X</span><span class="o">-</span><span class="no">Forwarded</span><span class="o">-</span><span class="no">For</span> <span class="vg">$proxy_add_x_forwarded_for</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">proxy_set_header</span> <span class="n">X</span><span class="o">-</span><span class="no">Forwarded</span><span class="o">-</span><span class="no">Proto</span> <span class="vg">$scheme</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">proxy_intercept_errors</span> <span class="n">on</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">proxy_redirect</span> <span class="n">off</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">proxy_pass</span> <span class="ss">http</span><span class="p">:</span><span class="sr">//uni</span><span class="n">corn</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">expires</span> <span class="n">off</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">location</span> <span class="o">/</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">try_files</span> <span class="vg">$uri</span> <span class="vi">@unicorn</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># error_page 500 502 503 504 /500.html;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And here&rsquo;s the unicorn configuration file:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config/unicorn.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">rails_env</span> <span class="o">=</span> <span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;RAILS_ENV&#39;</span><span class="o">]</span> <span class="o">||</span> <span class="s1">&#39;production&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">worker_processes</span> <span class="p">(</span><span class="n">rails_env</span> <span class="o">==</span> <span class="s1">&#39;production&#39;</span> <span class="p">?</span> <span class="mi">6</span> <span class="p">:</span> <span class="mi">3</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">preload_app</span> <span class="kp">true</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Restart any workers that haven&#39;t responded in 30 seconds</span>
+</span><span class='line'><span class="n">timeout</span> <span class="mi">30</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">working_directory</span> <span class="s1">&#39;/var/www/responsa/current&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Listen on a Unix data socket</span>
+</span><span class='line'><span class="n">pid</span> <span class="s1">&#39;/var/www/responsa/shared/pids/unicorn.pid&#39;</span>
+</span><span class='line'><span class="n">listen</span> <span class="s2">&quot;/var/www/responsa/tmp/sockets/responsa.sock&quot;</span><span class="p">,</span> <span class="ss">:backlog</span> <span class="o">=&gt;</span> <span class="mi">2048</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">stderr_path</span> <span class="s1">&#39;/var/www/responsa/shared/log/unicorn.log&#39;</span>
+</span><span class='line'><span class="n">stdout_path</span> <span class="s1">&#39;/var/www/responsa/shared/log/unicorn.log&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">before_exec</span> <span class="k">do</span> <span class="o">|</span><span class="n">server</span><span class="o">|</span>
+</span><span class='line'>  <span class="no">ENV</span><span class="o">[</span><span class="s2">&quot;BUNDLE_GEMFILE&quot;</span><span class="o">]</span> <span class="o">=</span> <span class="s2">&quot;/var/www/responsa/current/Gemfile&quot;</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">before_fork</span> <span class="k">do</span> <span class="o">|</span><span class="n">server</span><span class="p">,</span> <span class="n">worker</span><span class="o">|</span>
+</span><span class='line'>  <span class="c1">##</span>
+</span><span class='line'>  <span class="c1"># When sent a USR2, Unicorn will suffix its pidfile with .oldbin and</span>
+</span><span class='line'>  <span class="c1"># immediately start loading up a new version of itself (loaded with a new</span>
+</span><span class='line'>  <span class="c1"># version of our app). When this new Unicorn is completely loaded</span>
+</span><span class='line'>  <span class="c1"># it will begin spawning workers. The first worker spawned will check to</span>
+</span><span class='line'>  <span class="c1"># see if an .oldbin pidfile exists. If so, this means we&#39;ve just booted up</span>
+</span><span class='line'>  <span class="c1"># a new Unicorn and need to tell the old one that it can now die. To do so</span>
+</span><span class='line'>  <span class="c1"># we send it a QUIT.</span>
+</span><span class='line'>  <span class="c1">#</span>
+</span><span class='line'>  <span class="c1"># Using this method we get 0 downtime deploys.</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">old_pid</span> <span class="o">=</span> <span class="s1">&#39;/var/www/responsa/shared/pids/unicorn.pid.oldbin&#39;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="no">File</span><span class="o">.</span><span class="n">exists?</span><span class="p">(</span><span class="n">old_pid</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">server</span><span class="o">.</span><span class="n">pid</span> <span class="o">!=</span> <span class="n">old_pid</span>
+</span><span class='line'>    <span class="k">begin</span>
+</span><span class='line'>      <span class="no">Process</span><span class="o">.</span><span class="n">kill</span><span class="p">(</span><span class="s2">&quot;QUIT&quot;</span><span class="p">,</span> <span class="no">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">old_pid</span><span class="p">)</span><span class="o">.</span><span class="n">to_i</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">rescue</span> <span class="ss">Errno</span><span class="p">:</span><span class="ss">:ENOENT</span><span class="p">,</span> <span class="ss">Errno</span><span class="p">:</span><span class="ss">:ESRCH</span>
+</span><span class='line'>      <span class="c1"># someone else did our job for us</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Capistrano</h2>
+
+<p>After setting up the machine I created a snapshot on Digital Ocean, in case I had to restart from scratch.</p>
+
+<p>Time to deploy! Capistrano was an easy choice.</p>
+
+<p>Using Capistrano multistage I set up the production script</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config/deploy/production.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">set</span> <span class="ss">:server_ip</span><span class="p">,</span> <span class="vg">$MY_IP</span>
+</span><span class='line'><span class="n">server</span> <span class="n">server_ip</span><span class="p">,</span> <span class="ss">:app</span><span class="p">,</span> <span class="ss">:web</span><span class="p">,</span> <span class="ss">:primary</span> <span class="o">=&gt;</span> <span class="kp">true</span>
+</span><span class='line'><span class="n">set</span> <span class="ss">:rails_env</span><span class="p">,</span> <span class="s1">&#39;production&#39;</span>
+</span><span class='line'><span class="n">set</span> <span class="ss">:branch</span><span class="p">,</span> <span class="s1">&#39;master&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is used in combo with the deploy script:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config/deploy.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;bundler/capistrano&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;sidekiq/capistrano&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;capistrano/ext/multistage&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">set</span> <span class="ss">:stages</span><span class="p">,</span> <span class="sx">%w(production staging)</span>
+</span><span class='line'><span class="n">set</span> <span class="ss">:default_stage</span><span class="p">,</span> <span class="s1">&#39;staging&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">default_run_options</span><span class="o">[</span><span class="ss">:pty</span><span class="o">]</span> <span class="o">=</span> <span class="kp">true</span>
+</span><span class='line'><span class="n">ssh_options</span><span class="o">[</span><span class="ss">:forward_agent</span><span class="o">]</span> <span class="o">=</span> <span class="kp">true</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">set</span> <span class="ss">:application</span><span class="p">,</span> <span class="s1">&#39;responsa&#39;</span>
+</span><span class='line'><span class="n">set</span> <span class="ss">:repository</span><span class="p">,</span>  <span class="vg">$PATH_TO_GITHUB_REPO</span>
+</span><span class='line'><span class="n">set</span> <span class="ss">:deploy_to</span><span class="p">,</span> <span class="s2">&quot;/var/www/</span><span class="si">#{</span><span class="n">application</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="n">set</span> <span class="ss">:branch</span><span class="p">,</span> <span class="s1">&#39;development&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">set</span> <span class="ss">:scm</span><span class="p">,</span> <span class="ss">:git</span>
+</span><span class='line'><span class="n">set</span> <span class="ss">:scm_verbose</span><span class="p">,</span> <span class="kp">true</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">set</span> <span class="ss">:deploy_via</span><span class="p">,</span> <span class="ss">:remote_cache</span>
+</span><span class='line'><span class="n">set</span> <span class="ss">:use_sudo</span><span class="p">,</span> <span class="kp">true</span>
+</span><span class='line'><span class="n">set</span> <span class="ss">:keep_releases</span><span class="p">,</span> <span class="mi">3</span>
+</span><span class='line'><span class="n">set</span> <span class="ss">:user</span><span class="p">,</span> <span class="s1">&#39;deployer&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">set</span> <span class="ss">:bundle_without</span><span class="p">,</span> <span class="o">[</span><span class="ss">:development</span><span class="p">,</span> <span class="ss">:test</span><span class="p">,</span> <span class="ss">:acceptance</span><span class="o">]</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">set</span> <span class="ss">:rake</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">rake</span><span class="si">}</span><span class="s2"> --trace&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">set</span> <span class="ss">:default_environment</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>  <span class="s1">&#39;PATH&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;/usr/local/rbenv/shims:/usr/local/rbenv/bin:$PATH&#39;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">after</span> <span class="s1">&#39;deploy:update_code&#39;</span><span class="p">,</span> <span class="ss">:upload_env_vars</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">after</span> <span class="s1">&#39;deploy:setup&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">sudo</span> <span class="s2">&quot;chown -R </span><span class="si">#{</span><span class="n">user</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">deploy_to</span><span class="si">}</span><span class="s2"> &amp;&amp; chmod -R g+s </span><span class="si">#{</span><span class="n">deploy_to</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">namespace</span> <span class="ss">:deploy</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">desc</span> <span class="o">&lt;&lt;-</span><span class="no">DESC</span>
+</span><span class='line'><span class="sh">  Send a USR2 to the unicorn process to restart for zero downtime deploys.</span>
+</span><span class='line'><span class="sh">  runit expects 2 to tell it to send the USR2 signal to the process.</span>
+</span><span class='line'><span class="no">  DESC</span>
+</span><span class='line'>  <span class="n">task</span> <span class="ss">:restart</span><span class="p">,</span> <span class="ss">:roles</span> <span class="o">=&gt;</span> <span class="ss">:app</span><span class="p">,</span> <span class="ss">:except</span> <span class="o">=&gt;</span> <span class="p">{</span> <span class="ss">:no_release</span> <span class="o">=&gt;</span> <span class="kp">true</span> <span class="p">}</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">run</span> <span class="s2">&quot;sv 2 /home/</span><span class="si">#{</span><span class="n">user</span><span class="si">}</span><span class="s2">/service/</span><span class="si">#{</span><span class="n">application</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">task</span> <span class="ss">:upload_env_vars</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">upload</span><span class="p">(</span><span class="s2">&quot;.env.</span><span class="si">#{</span><span class="n">rails_env</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">release_path</span><span class="si">}</span><span class="s2">/.env.</span><span class="si">#{</span><span class="n">rails_env</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="ss">:via</span> <span class="o">=&gt;</span> <span class="ss">:scp</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now with two simple commands I can deploy with 0 downtime!</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">cap</span> <span class="ss">deploy</span><span class="p">:</span><span class="n">setup</span>
+</span><span class='line'><span class="n">cap</span> <span class="n">deploy</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I must thank czarneckid for sharing <a href="https://gist.github.com/czarneckid/4639793">his setup on Github</a> from which I stole some useful portions and also <a href="https://twitter.com/bugant">@bugant</a> for his patience.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Matteo Depalo</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-07T11:24:00+01:00" pubdate data-updated="true">Mar 7<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/capistrano/'>capistrano</a>, <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/deployment/'>deployment</a>, <a class='category' href='/blog/categories/nginx/'>nginx</a>, <a class='category' href='/blog/categories/rails/'>rails</a>, <a class='category' href='/blog/categories/unicorn/'>unicorn</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/" data-via="matteodepalo" data-counturl="http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/02/01/refactor-replace-method-with-method-object/" title="Previous Post: Refactor: Replace Method with Method Object">&laquo; Refactor: Replace Method with Method Object</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/04/08/minimum-viable-stack/" title="Next Post: minimum viable stack">minimum viable stack &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/rails-api-documentation/">Rails API Documentation</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/08/minimum-viable-stack/">Minimum Viable Stack</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/">How I Migrated From Heroku to Digital Ocean With Chef and Capistrano</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/02/01/refactor-replace-method-with-method-object/">Refactor: Replace Method With Method Object</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/">How to Create Custom Stylesheets Dynamically With Rails and Sass</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/matteodepalo">@matteodepalo</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'matteodepalo',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/102959180704550392673?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Matteo Depalo -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'matteodepalo';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/';
+        var disqus_url = 'http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: refactoring | Matteo Depalo's Blog]]></title>
+  <link href="http://matteodepalo.github.io/blog/categories/refactoring/atom.xml" rel="self"/>
+  <link href="http://matteodepalo.github.io/"/>
+  <updated>2013-09-09T16:54:35+02:00</updated>
+  <id>http://matteodepalo.github.io/</id>
+  <author>
+    <name><![CDATA[Matteo Depalo]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Refactor: Replace Method with Method Object]]></title>
+    <link href="http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object/"/>
+    <updated>2013-02-01T11:40:00+01:00</updated>
+    <id>http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object</id>
+    <content type="html"><![CDATA[<p>In my previous <a href="http://matteodepalo.github.com/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/">post</a> I described how to implement a feature that allows our customers to create custom stylesheets for their widget.
+Altough it worked just fine, the <code>compile</code> class method of the <code>CustomTheme</code> class was blatantly big, so I decided to refactor it.</p>
+
+<p>The biggest issue I faced was that since this was a class method, in order to split it I should have created many little class methods and pass around the theme instance; a solution that didn&rsquo;t satisfy me. The reason <code>compile</code> needed to stay a class method is that I don&rsquo;t want to serialize the whole <code>CustomTheme</code> object and pass it to Sidekiq. Having considered this premises I could proceed in two ways:</p>
+
+<ul>
+<li>Delegate the class method <code>compile</code> to an instance method of a new custom theme, something along the lines of:</li>
+</ul>
+
+
+<p>```ruby
+def self.compile(theme_id)
+  CustomTheme.find(theme_id).compile
+end</p>
+
+<p>private</p>
+
+<p>def compile
+  # perform the actual compilation
+end
+```</p>
+
+<ul>
+<li>Create a class with the name of the method and extract everything there (thanks <a href="https://twitter.com/bugant">@bugant</a> for reminding me of this refactor)</li>
+</ul>
+
+
+<p>I decided to go with the latter so I followed these steps:</p>
+
+<ol>
+<li>Create the class ThemeCompiler</li>
+<li>Give the new class an attribute for the object that hosted the original method (theme) and an attribute for each temporary variable in the method</li>
+<li>Give the new class a method &ldquo;compute&rdquo;</li>
+<li>Copy the body of the original method into compute</li>
+<li>Split the compute method in smaller methods</li>
+</ol>
+
+
+<h2>Final considerations</h2>
+
+<p>The first approach has the advantage of keeping everything in one class and use encapsulation properly, however it forces you to keep temp variables at the top of the compile method and increases the length of the class.</p>
+
+<p>The second one puts every temp variables in the constructor but has the disadvantage of being envious of the <code>CustomTheme</code> class data to the point that it forces the promotion of one CustomTheme private method to public. Something like <a href="http://en.wikipedia.org/wiki/Friend_class">friend classes</a> would have helped in this refactor.</p>
+
+<p>The final result, indipendent of the methodology, is that the compile method is now much clearer.</p>
+
+<h2>The code</h2>
+
+<p>```ruby</p>
+
+<h1>custom_theme.rb</h1>
+
+<p>def self.compile(theme_id)
+  ThemeCompiler.new(theme_id).compute
+end
+```</p>
+
+<p>```ruby</p>
+
+<h1>theme_compiler.rb</h1>
+
+<p>class ThemeCompiler
+  attr_reader :theme, :body, :tmp_themes_path, :tmp_asset_name, :widget, :compressed_body, :asset, :env</p>
+
+<p>  def initialize(theme_id)</p>
+
+<pre><code>@theme = CustomTheme.find(theme_id)
+@body = ERB.new(File.read(File.join(Rails.root, 'app', 'assets', 'stylesheets', 'widget_custom.scss.erb'))).result(theme.get_binding)
+@tmp_themes_path = File.join(Rails.root, 'tmp', 'themes')
+@tmp_asset_name = theme.widget_id.to_s
+@widget = theme.widget
+@env = if Rails.application.assets.is_a?(Sprockets::Index)
+  Rails.application.assets.instance_variable_get('@environment')
+else
+  Rails.application.assets
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  def compute</p>
+
+<pre><code>create_temporary_file
+compile
+compress
+upload
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  def compile</p>
+
+<pre><code>@asset = env.find_asset(tmp_asset_name)
+</code></pre>
+
+<p>  rescue Sass::SyntaxError => error</p>
+
+<pre><code>widget.user.notifications.create(:message =&gt; error.message.gsub(/ \(.+\)$/, ''), :type =&gt; 'error')
+theme.revert
+</code></pre>
+
+<p>  end</p>
+
+<p>  def compress</p>
+
+<pre><code>@compressed_body = ::Sass::Engine.new(asset.body, {
+  :syntax =&gt; :scss,
+  :cache =&gt; false,
+  :read_cache =&gt; false,
+  :style =&gt; :compressed
+}).render
+</code></pre>
+
+<p>  end</p>
+
+<p>  def create_temporary_file</p>
+
+<pre><code>FileUtils.mkdir_p(tmp_themes_path) unless File.directory?(tmp_themes_path)
+File.open(File.join(tmp_themes_path, "#{tmp_asset_name}.scss"), 'w') { |f| f.write(body) }
+</code></pre>
+
+<p>  end</p>
+
+<p>  def upload</p>
+
+<pre><code>theme.delete_asset
+
+if Rails.env.production?
+  FOG_STORAGE.directories.get(ENV['FOG_DIRECTORY']).files.create(
+    :key    =&gt; theme.asset_path(asset.digest),
+    :body   =&gt; StringIO.new(compressed_body),
+    :public =&gt; true,
+    :content_type =&gt; 'text/css'
+  )
+else
+  File.open(File.join(Rails.root, 'public', theme.asset_path(asset.digest)), 'w') { |f| f.write(compressed_body) }
+end
+
+theme.update_attribute(:digest, asset.digest)
+</code></pre>
+
+<p>  end
+end
+```</p>
+]]></content>
+  </entry>
+  
+</feed>

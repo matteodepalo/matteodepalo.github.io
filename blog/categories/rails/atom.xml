@@ -1,0 +1,1079 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: rails | Matteo Depalo's Blog]]></title>
+  <link href="http://matteodepalo.github.io/blog/categories/rails/atom.xml" rel="self"/>
+  <link href="http://matteodepalo.github.io/"/>
+  <updated>2013-09-09T16:54:35+02:00</updated>
+  <id>http://matteodepalo.github.io/</id>
+  <author>
+    <name><![CDATA[Matteo Depalo]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Rails API documentation]]></title>
+    <link href="http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation/"/>
+    <updated>2013-07-24T12:46:00+02:00</updated>
+    <id>http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation</id>
+    <content type="html"><![CDATA[<p>Lately I&rsquo;ve been working on a new project for mobile called Playround. My job is to design and implement the API. I must say that with the help of Rails 4 and Rails API the experience has been the smoothest possible. With requests and models specs I can test the whole application at blazing speeds.
+At a certain point however I faced an issue: documentation.</p>
+
+<p>Especially in the first stages of development, working inside a team mandates transparency about the current status of the API so the mobile developers know exactly what to expect from the server while testing locally.
+Of course documenting is exceptionally useful also for the mature stage of the project when we will have to publish the API documentation in a beautiful layout. In order to achieve documentation nirvana I started experimenting various ways of building it, possibly in a way that would output something I can use for our public doc.</p>
+
+<p>At first I started putting &ldquo;debugger&rdquo; in every test and printing the output of the response, however this task got tedious pretty fast. Looking around I found a <a href="https://github.com/zipmark/rspec_api_documentation">gem</a> that compiles a documentation, however it forced me to use a specific dsl which means I had to rewrite my tests. When I started I used the convention adopted by the first requests tests you find with scaffolds and I wanted to keep that.</p>
+
+<p>In order to achieve this I wrote a simple script in the spec helper that does the following things:</p>
+
+<ul>
+<li>For every request spec file it creates a corresponding txt file inside the doc folder.</li>
+<li>For each test the path, status, request and response are written inside the corresponding file.</li>
+</ul>
+
+
+<p>Request tests have to follow a convention:</p>
+
+<ul>
+<li>Top level descriptions are named after the model (plural form) followed by the word &ldquo;Requests&rdquo;. For the model Arena it would be &ldquo;Arenas Requests&rdquo;.</li>
+<li>Actions are in the form of &ldquo;VERB path&rdquo;. For the show action of the Arenas controller it would be &ldquo;GET /arenas/:id&rdquo;.</li>
+</ul>
+
+
+<p>The code:</p>
+
+<p>```ruby
+config.after(:each, type: :request) do
+  if response</p>
+
+<pre><code>example_group = example.metadata[:example_group]
+example_groups = []
+
+while example_group
+  example_groups &lt;&lt; example_group
+  example_group = example_group[:example_group]
+end
+
+action = example_groups[-2][:description_args].first if example_groups[-2]
+example_groups[-1][:description_args].first.match(/(\w+)\sRequests/)
+file_name = $1.underscore
+
+File.open(File.join(Rails.root, "/docs/#{file_name}.txt"), 'a') do |f|
+  f.write "#{action} \n\n"
+
+  request_body = request.body.read
+
+  if request.headers['Authorization']
+    f.write "Headers: \n\n"
+    f.write "Authorization: #{request.headers['Authorization']} \n\n"
+  end
+
+  if request_body.present?
+    f.write "Request body: \n\n"
+    f.write "#{JSON.pretty_generate(JSON.parse(request_body))} \n\n"
+  end
+
+  f.write "Status: #{response.status} \n\n"
+
+  if response.body.present?
+    f.write "Response body: \n\n"
+    f.write "#{JSON.pretty_generate(JSON.parse(response.body))} \n\n"
+  end
+end unless response.status == 401 || response.status == 403 || response.status == 301
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Example output for &ldquo;Rounds Requests&rdquo; POST action:</p>
+
+<p>```
+POST /v1/rounds</p>
+
+<p>Headers:</p>
+
+<p>Authorization: Token token=&ldquo;36260243e091bfe56f96483592afc723&rdquo;</p>
+
+<p>Request body:</p>
+
+<p>{
+  &ldquo;round&rdquo;: {</p>
+
+<pre><code>"game_name": "dota2",
+"arena": {
+  "foursquare_id": "5104"
+}
+</code></pre>
+
+<p>  }
+}</p>
+
+<p>Status: 201</p>
+
+<p>Response body:</p>
+
+<p>{
+  &ldquo;round&rdquo;: {</p>
+
+<pre><code>"id": "ec6add8b-709f-475d-8f06-8ad44d8a95d3",
+"state": "waiting_for_players",
+"created_at": "2013-07-24T12:16:14.700Z",
+"game": {
+  "id": "1c59b30e-599a-4ea1-9d5c-a364079528ad",
+  "name": "dota2",
+  "display_name": "Dota 2",
+  "picture_url": "http://localhost:8080/assets/dota2.jpg",
+  "teams": [
+    {
+      "name": "radiant",
+      "display_name": "Radiant",
+      "number_of_players": 5
+    },
+    {
+      "name": "dire",
+      "display_name": "Dire",
+      "number_of_players": 5
+    }
+  ]
+},
+"arena": {
+  "id": "5c593125-a114-4a1a-936f-2cc4b21fa0a8",
+  "name": "Clinton St. Baking Co. &amp; Restaurant",
+  "latitude": 40.721294,
+  "longitude": -73.983994,
+  "foursquare_id": "5104"
+},
+"teams": [
+
+],
+"user": {
+  "id": "87fb0fe4-2f0c-400d-ba00-000c3f5ea642",
+  "name": "Test User",
+  "picture_url": "http://graph.facebook.com/12132/picture?type=square",
+  "facebook_id": "12132"
+}
+</code></pre>
+
+<p>  }
+}
+```</p>
+
+<p>I&rsquo;m excluding 401, 403 and 301 status codes because those cases are grouped and documented inside a common area in my documentation, but there is nothing special about them.</p>
+
+<p>Now to the beautiful layout part. Right now I&rsquo;m copy pasting those response and requests bodies inside the templates of a <a href="https://github.com/playround/playround-developer">Jekyll application</a> hosted on <a href="http://developer.goplayround.com">Github Pages</a>. One way to automate this would be to use a templating language in order to output html documents instead of plain txt files. Since the production documentation should change way less frequently than the development one, this is a automation I can skip for now. It&rsquo;s far more important to keep a fresh copy of the features for internal usage, which can be rebuilt anytime by anyone with no effort.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[How I migrated from Heroku to Digital Ocean with Chef and Capistrano]]></title>
+    <link href="http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/"/>
+    <updated>2013-03-07T11:24:00+01:00</updated>
+    <id>http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano</id>
+    <content type="html"><![CDATA[<p>UPDATE:</p>
+
+<ul>
+<li>Removed ElasticSearch and MongoDB recipes since they were not so useful for this tutorial.</li>
+<li>Added unicorn.rb</li>
+<li>Added ssh authentication step</li>
+<li>Added file paths</li>
+</ul>
+
+
+<p>I&rsquo;ve always loved deploying to Heroku. The simplicity of a git push let me focus on developing my applications which is what I really care about. However, both because of the <a href="http://rapgenius.com/James-somers-herokus-ugly-secret-lyrics">scandal about the routing system</a> and because I wanted to expand my skill set by entering the sysadmin land, at <a href="https://goresponsa.com">Responsa</a> I decided to migrate to a VPS solution.</p>
+
+<p>At this point I had three choices to make:</p>
+
+<ol>
+<li>Hosting provider</li>
+<li>Technology stack</li>
+<li>Deploy strategy</li>
+</ol>
+
+
+<h2>Provider</h2>
+
+<p>Many hackers I follow were recommending <a href="https://www.digitalocean.com/">Digital Ocean</a> so I gave it a try. I must say I was very impressed with the simplicity and power of their dashboard, so I decided to use it.</p>
+
+<p>I immediately changed my root password</p>
+
+<p><code>
+passwd
+</code></p>
+
+<p>Copied over my ssh key with</p>
+
+<p><code>
+ssh-copy-id root@$IP
+</code></p>
+
+<p>And disabled password access setting <code>PasswordAuthentication no</code> in <code>/etc/ssh/sshd_config</code></p>
+
+<h2>Technology</h2>
+
+<p>The decision of the web server was also quick. I wanted to achieve 0 downtime deployments so Github use of <a href="https://github.com/blog/517-unicorn">Unicorn + Nginx</a> jumped to my mind.</p>
+
+<h2>Deploy strategy</h2>
+
+<p>This is where things got a little bit complicated. Disclaimer: I&rsquo;m not a Linux/Unix pro, so many system administration practices where unknown to me prior to this week. Having said that, It was clear to me that the community is very fragmented. There were so many solutions to the same problems and so many scripts! After digging, trying and failing miserably I settled on the stack that caused me the least suffering:</p>
+
+<ol>
+<li>Chef solo and Knife for the machine provisioning</li>
+<li>Capistrano for the deployment</li>
+</ol>
+
+
+<h2>Chef</h2>
+
+<p><a href="http://www.opscode.com/chef/">Chef</a> is a provisioning tool written in Ruby. Its DSL is very expressive and powerful. The community is full of useful cookbooks that ease the setup of common services, however it seemed to lack a way to handle community cookbooks. This is where <a href="https://github.com/applicationsonline/librarian-chef">Librarian Chef</a> comes in. I just had to write a Cheffile with all the dependencies and I was done.</p>
+
+<p>```ruby</p>
+
+<h1>Cheffile</h1>
+
+<h1>!/usr/bin/env ruby</h1>
+
+<h1>^syntax detection</h1>
+
+<p>site &lsquo;<a href="http://community.opscode.com/api/v1">http://community.opscode.com/api/v1</a>&rsquo;</p>
+
+<p>cookbook &lsquo;libqt4&rsquo;,
+  :git => &lsquo;<a href="https://github.com/phlipper/chef-libqt4">https://github.com/phlipper/chef-libqt4</a>&rsquo;</p>
+
+<p>cookbook &lsquo;nodejs&rsquo;
+cookbook &lsquo;nginx&rsquo;
+cookbook &lsquo;runit&rsquo;
+cookbook &lsquo;java&rsquo;
+cookbook &lsquo;imagemagick&rsquo;
+cookbook &lsquo;vim&rsquo;
+cookbook &lsquo;ruby_build&rsquo;, :git => &lsquo;git://github.com/fnichol/chef-ruby_build.git&rsquo;
+cookbook &lsquo;rbenv&rsquo;, :git => &lsquo;git://github.com/fnichol/chef-rbenv.git&rsquo;
+cookbook &lsquo;redis&rsquo;, :git => &lsquo;git://github.com/cassianoleal/chef-redis.git&rsquo;
+cookbook &lsquo;memcached&rsquo;
+```</p>
+
+<p>To bootstrap the machine with Chef and Ruby many people where using custom Knife templates that were not working for me. Some installed ruby with RVM, others with rbenv. In the end I found <a href="http://matschaffer.github.com/knife-solo/">Knife Solo</a> that solved all my problems. With one command after the initialization I could install Chef AND run all my recipes to install Ruby and every other service I needed.</p>
+
+<p><code>
+knife solo init
+knife solo bootstrap root@$IP node.json
+</code></p>
+
+<p>Librarian and Knife Solo forced me to use a specific project structure:</p>
+
+<p><code>
+mychefrepo/
+├── cookbooks
+├── site-cookbooks
+├── Cheffile
+├── Cheffile.lock
+└── node.json
+</code></p>
+
+<p>The node.json contains the run list of recipes:</p>
+
+<p>```json
+{
+  &ldquo;user&rdquo;: {</p>
+
+<pre><code>"name": "deployer",
+"password": $PASSWORD
+</code></pre>
+
+<p>  },
+  &ldquo;environment&rdquo;: &ldquo;production&rdquo;,
+  &ldquo;server_name&rdquo;: &ldquo;goresponsa.com&rdquo;,
+  &ldquo;deploy_to&rdquo;: &ldquo;/var/www/responsa&rdquo;,
+  &ldquo;ruby-version&rdquo;: &ldquo;1.9.3-p286&rdquo;,
+  &ldquo;run_list&rdquo;: [</p>
+
+<pre><code>"recipe[vim]",
+"recipe[libqt4]",
+"recipe[imagemagick]",
+"recipe[java]",
+"recipe[redis::source]",
+"recipe[memcached]",
+"recipe[nodejs]",
+"recipe[ruby_build]",
+"recipe[rbenv::system]",
+"recipe[runit]",
+"recipe[nginx]",
+"recipe[main]"
+</code></pre>
+
+<p>  ]
+}
+```</p>
+
+<p>All recipes except the &ldquo;main&rdquo; one are taken from community cookbooks.</p>
+
+<p>The main recipe contains machine/application specific setup:</p>
+
+<p>```ruby</p>
+
+<h1>chef/site-cookbooks/main/recipes/default.rb</h1>
+
+<h1>setup</h1>
+
+<p>rbenv_ruby node[&lsquo;ruby-version&rsquo;]
+rbenv_global node[&lsquo;ruby-version&rsquo;]</p>
+
+<p>rbenv_gem &lsquo;bundler&rsquo;</p>
+
+<p>group &lsquo;admin&rsquo; do
+  gid 420
+end</p>
+
+<p>user node[:user][:name] do
+  password node[:user][:password]
+  gid &lsquo;admin&rsquo;
+  home &ldquo;/home/#{node[:user][:name]}&rdquo;
+  shell &lsquo;/bin/bash&rsquo;
+  supports :manage_home => true
+end</p>
+
+<p>directory &ldquo;#{node[:deploy_to]}/tmp/sockets&rdquo; do
+  owner node[:user][:name]
+  group &lsquo;admin&rsquo;
+  recursive true
+end</p>
+
+<h1>certificates</h1>
+
+<p>directory &ldquo;#{node[:deploy_to]}/certificate&rdquo; do
+  owner node[:user][:name]
+  recursive true
+end</p>
+
+<p>cookbook_file &ldquo;#{node[:deploy_to]}/certificate/#{node[:environment]}.crt&rdquo; do
+  source &ldquo;#{node[:environment]}.crt&rdquo;
+  action :create_if_missing
+end</p>
+
+<p>cookbook_file &ldquo;#{node[:deploy_to]}/certificate/#{node[:environment]}.key&rdquo; do
+  source &ldquo;#{node[:environment]}.key&rdquo;
+  action :create_if_missing
+end</p>
+
+<h1>configuration</h1>
+
+<p>template &lsquo;/etc/nginx/sites-enabled/default&rsquo; do
+  source &lsquo;nginx.erb&rsquo;
+  owner &lsquo;root&rsquo;
+  group &lsquo;root&rsquo;
+  mode 0644
+  notifies :restart, &lsquo;service[nginx]&rsquo;
+end</p>
+
+<p>[&ldquo;sv&rdquo;, &ldquo;service&rdquo;].each do |dir|
+  directory &ldquo;/home/#{node[:user][:name]}/#{dir}&rdquo; do</p>
+
+<pre><code>owner node[:user][:name]
+group 'admin'
+recursive true
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>runit_service &ldquo;runsvdir-#{node[:user][:name]}&rdquo; do
+  default_logger true
+end</p>
+
+<p>runit_service &lsquo;responsa&rsquo; do
+  sv_dir &ldquo;/home/#{node[:user][:name]}/sv&rdquo;
+  service_dir &ldquo;/home/#{node[:user][:name]}/service&rdquo;
+  owner node[:user][:name]
+  group &lsquo;admin&rsquo;
+  restart_command &lsquo;2&rsquo;
+  restart_on_update false
+  default_logger true
+end</p>
+
+<p>service &lsquo;nginx&rsquo;
+```</p>
+
+<p>I&rsquo;m using runit to manage the unicorn service that is declared in a template file:</p>
+
+<p>```</p>
+
+<h1>chef/site-cookbooks/main/templates/default/sv-runsvdir-deployer-run.erb</h1>
+
+<h1>!/bin/sh</h1>
+
+<p>exec 2>&amp;1
+exec chpst -u deployer runsvdir /home/deployer/service
+```</p>
+
+<p>```</p>
+
+<h1>chef/site-cookbooks/main/templates/default/sv-responsa-run.erb</h1>
+
+<h1>!/bin/bash</h1>
+
+<p>exec 2>&amp;1</p>
+
+<p>&lt;% unicorn_command = @options[:unicorn_command] || &lsquo;unicorn_rails&rsquo; &ndash;%></p>
+
+<p>#</p>
+
+<h1>Since unicorn creates a new pid on restart/reload, it needs a little extra love to</h1>
+
+<h1>manage with runit. Instead of managing unicorn directly, we simply trap signal calls</h1>
+
+<h1>to the service and redirect them to unicorn directly.</h1>
+
+<p>function is_unicorn_alive {</p>
+
+<pre><code>set +e
+if [ -n $1 ] &amp;&amp; kill -0 $1 &gt;/dev/null 2&gt;&amp;1; then
+    echo "yes"
+fi
+set -e
+</code></pre>
+
+<p>}</p>
+
+<p>echo &ldquo;Service PID: $$&rdquo;</p>
+
+<p>CUR_PID_FILE=/var/www/responsa/shared/pids/unicorn.pid
+OLD_PID_FILE=$CUR_PID_FILE.oldbin</p>
+
+<p>if [ -e $OLD_PID_FILE ]; then</p>
+
+<pre><code>OLD_PID=$(cat $OLD_PID_FILE)
+echo "Waiting for existing master ($OLD_PID) to exit"
+while [ -n "$(is_unicorn_alive $OLD_PID)" ]; do
+    /bin/echo -n '.'
+    sleep 2
+done
+</code></pre>
+
+<p>fi</p>
+
+<p>if [ -e $CUR_PID_FILE ]; then</p>
+
+<pre><code>CUR_PID=$(cat $CUR_PID_FILE)
+if [ -n "$(is_unicorn_alive $CUR_PID)" ]; then
+    echo "Unicorn master already running. PID: $CUR_PID"
+    RUNNING=true
+fi
+</code></pre>
+
+<p>fi</p>
+
+<p>if [ ! $RUNNING ]; then</p>
+
+<pre><code>echo "Starting unicorn"
+cd /var/www/responsa/current
+export PATH="/usr/local/rbenv/shims:/usr/local/rbenv/bin:$PATH"
+# You need to daemonize the unicorn process, http://unicorn.bogomips.org/unicorn_rails_1.html
+bundle exec &lt;%= unicorn_command %&gt; -c config/unicorn.rb -E &lt;%= @options[:environment] || 'staging' %&gt; -D
+sleep 3
+CUR_PID=$(cat $CUR_PID_FILE)
+</code></pre>
+
+<p>fi</p>
+
+<p>function restart {</p>
+
+<pre><code>echo "Initialize new master with USR2"
+kill -USR2 $CUR_PID
+# Make runit restart to pick up new unicorn pid
+sleep 2
+echo "Restarting service to capture new pid"
+exit
+</code></pre>
+
+<p>}</p>
+
+<p>function graceful_shutdown {</p>
+
+<pre><code>echo "Initializing graceful shutdown"
+kill -QUIT $CUR_PID
+</code></pre>
+
+<p>}</p>
+
+<p>function unicorn_interrupted {</p>
+
+<pre><code>echo "Unicorn process interrupted. Possibly a runit thing?"
+</code></pre>
+
+<p>}</p>
+
+<p>trap restart HUP QUIT USR2 INT
+trap graceful_shutdown TERM KILL
+trap unicorn_interrupted ALRM</p>
+
+<p>echo &ldquo;Waiting for current master to die. PID: ($CUR_PID)&rdquo;
+while [ -n &ldquo;$(is_unicorn_alive $CUR_PID)&rdquo; ]; do</p>
+
+<pre><code>/bin/echo -n '.'
+sleep 2
+</code></pre>
+
+<p>done
+echo &ldquo;You&rsquo;ve killed a unicorn!&rdquo;
+```</p>
+
+<p>Nginx is used as a reverse proxy:</p>
+
+<p>```</p>
+
+<h1>chef/site-cookbooks/main/templates/default/nginx.erb</h1>
+
+<p>upstream unicorn {
+  server unix:/var/www/responsa/tmp/sockets/responsa.sock fail_timeout=0;
+}</p>
+
+<p>server {
+  listen 80;
+  listen 443 default ssl;
+  server_name &lt;%= node[:server_name] %>;
+  root /var/www/responsa/current/public;
+  # set far-future expiration headers on static content
+  expires max;</p>
+
+<p>  server_tokens off;</p>
+
+<p>  # ssl                  on;
+  ssl_certificate      &lt;%= &ldquo;/var/www/responsa/certificate/#{node[:environment]}.crt&rdquo; %>;
+  ssl_certificate_key  &lt;%= &ldquo;/var/www/responsa/certificate/#{node[:environment]}.key&rdquo; %>;</p>
+
+<p>  ssl_session_timeout  5m;</p>
+
+<p>  ssl_protocols  SSLv2 SSLv3 TLSv1;
+  ssl_ciphers  HIGH:!aNULL:!MD5;
+  ssl_prefer_server_ciphers   on;</p>
+
+<p>  # set up the rails servers as a virtual location for use later
+  location @unicorn {</p>
+
+<pre><code>proxy_set_header Host $host;
+proxy_set_header X-Real-IP  $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_intercept_errors on;
+proxy_redirect off;
+proxy_pass http://unicorn;
+expires off;
+</code></pre>
+
+<p>  }</p>
+
+<p>  location / {</p>
+
+<pre><code>try_files $uri @unicorn;
+</code></pre>
+
+<p>  }</p>
+
+<p>  # error_page 500 502 503 504 /500.html;
+}
+```</p>
+
+<p>And here&rsquo;s the unicorn configuration file:</p>
+
+<p>```ruby</p>
+
+<h1>config/unicorn.rb</h1>
+
+<p>rails_env = ENV[&lsquo;RAILS_ENV&rsquo;] || &lsquo;production&rsquo;</p>
+
+<p>worker_processes (rails_env == &lsquo;production&rsquo; ? 6 : 3)</p>
+
+<p>preload_app true</p>
+
+<h1>Restart any workers that haven&rsquo;t responded in 30 seconds</h1>
+
+<p>timeout 30</p>
+
+<p>working_directory &lsquo;/var/www/responsa/current&rsquo;</p>
+
+<h1>Listen on a Unix data socket</h1>
+
+<p>pid &lsquo;/var/www/responsa/shared/pids/unicorn.pid&rsquo;
+listen &ldquo;/var/www/responsa/tmp/sockets/responsa.sock&rdquo;, :backlog => 2048</p>
+
+<p>stderr_path &lsquo;/var/www/responsa/shared/log/unicorn.log&rsquo;
+stdout_path &lsquo;/var/www/responsa/shared/log/unicorn.log&rsquo;</p>
+
+<p>before_exec do |server|
+  ENV[&ldquo;BUNDLE_GEMFILE&rdquo;] = &ldquo;/var/www/responsa/current/Gemfile&rdquo;
+end</p>
+
+<p>before_fork do |server, worker|
+  ##
+  # When sent a USR2, Unicorn will suffix its pidfile with .oldbin and
+  # immediately start loading up a new version of itself (loaded with a new
+  # version of our app). When this new Unicorn is completely loaded
+  # it will begin spawning workers. The first worker spawned will check to
+  # see if an .oldbin pidfile exists. If so, this means we&rsquo;ve just booted up
+  # a new Unicorn and need to tell the old one that it can now die. To do so
+  # we send it a QUIT.
+  #
+  # Using this method we get 0 downtime deploys.</p>
+
+<p>  old_pid = &lsquo;/var/www/responsa/shared/pids/unicorn.pid.oldbin&rsquo;</p>
+
+<p>  if File.exists?(old_pid) &amp;&amp; server.pid != old_pid</p>
+
+<pre><code>begin
+  Process.kill("QUIT", File.read(old_pid).to_i)
+rescue Errno::ENOENT, Errno::ESRCH
+  # someone else did our job for us
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<h2>Capistrano</h2>
+
+<p>After setting up the machine I created a snapshot on Digital Ocean, in case I had to restart from scratch.</p>
+
+<p>Time to deploy! Capistrano was an easy choice.</p>
+
+<p>Using Capistrano multistage I set up the production script</p>
+
+<p>```ruby</p>
+
+<h1>config/deploy/production.rb</h1>
+
+<p>set :server_ip, $MY_IP
+server server_ip, :app, :web, :primary => true
+set :rails_env, &lsquo;production&rsquo;
+set :branch, &lsquo;master&rsquo;
+```</p>
+
+<p>This is used in combo with the deploy script:</p>
+
+<p>```ruby</p>
+
+<h1>config/deploy.rb</h1>
+
+<p>require &lsquo;bundler/capistrano&rsquo;
+require &lsquo;sidekiq/capistrano&rsquo;
+require &lsquo;capistrano/ext/multistage&rsquo;</p>
+
+<p>set :stages, %w(production staging)
+set :default_stage, &lsquo;staging&rsquo;</p>
+
+<p>default_run_options[:pty] = true
+ssh_options[:forward_agent] = true</p>
+
+<p>set :application, &lsquo;responsa&rsquo;
+set :repository,  $PATH_TO_GITHUB_REPO
+set :deploy_to, &ldquo;/var/www/#{application}&rdquo;
+set :branch, &lsquo;development&rsquo;</p>
+
+<p>set :scm, :git
+set :scm_verbose, true</p>
+
+<p>set :deploy_via, :remote_cache
+set :use_sudo, true
+set :keep_releases, 3
+set :user, &lsquo;deployer&rsquo;</p>
+
+<p>set :bundle_without, [:development, :test, :acceptance]</p>
+
+<p>set :rake, &ldquo;#{rake} &mdash;trace&rdquo;</p>
+
+<p>set :default_environment, {
+  &lsquo;PATH&rsquo; => &lsquo;/usr/local/rbenv/shims:/usr/local/rbenv/bin:$PATH&rsquo;
+}</p>
+
+<p>after &lsquo;deploy:update_code&rsquo;, :upload_env_vars</p>
+
+<p>after &lsquo;deploy:setup&rsquo; do
+  sudo &ldquo;chown -R #{user} #{deploy_to} &amp;&amp; chmod -R g+s #{deploy_to}&rdquo;
+end</p>
+
+<p>namespace :deploy do
+  desc &lt;&lt;-DESC
+  Send a USR2 to the unicorn process to restart for zero downtime deploys.
+  runit expects 2 to tell it to send the USR2 signal to the process.
+  DESC
+  task :restart, :roles => :app, :except => { :no_release => true } do</p>
+
+<pre><code>run "sv 2 /home/#{user}/service/#{application}"
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>task :upload_env_vars do
+  upload(&ldquo;.env.#{rails_env}&rdquo;, &ldquo;#{release_path}/.env.#{rails_env}&rdquo;, :via => :scp)
+end
+```</p>
+
+<p>Now with two simple commands I can deploy with 0 downtime!</p>
+
+<p><code>
+cap deploy:setup
+cap deploy
+</code></p>
+
+<p>I must thank czarneckid for sharing <a href="https://gist.github.com/czarneckid/4639793">his setup on Github</a> from which I stole some useful portions and also <a href="https://twitter.com/bugant">@bugant</a> for his patience.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Refactor: Replace Method with Method Object]]></title>
+    <link href="http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object/"/>
+    <updated>2013-02-01T11:40:00+01:00</updated>
+    <id>http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object</id>
+    <content type="html"><![CDATA[<p>In my previous <a href="http://matteodepalo.github.com/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/">post</a> I described how to implement a feature that allows our customers to create custom stylesheets for their widget.
+Altough it worked just fine, the <code>compile</code> class method of the <code>CustomTheme</code> class was blatantly big, so I decided to refactor it.</p>
+
+<p>The biggest issue I faced was that since this was a class method, in order to split it I should have created many little class methods and pass around the theme instance; a solution that didn&rsquo;t satisfy me. The reason <code>compile</code> needed to stay a class method is that I don&rsquo;t want to serialize the whole <code>CustomTheme</code> object and pass it to Sidekiq. Having considered this premises I could proceed in two ways:</p>
+
+<ul>
+<li>Delegate the class method <code>compile</code> to an instance method of a new custom theme, something along the lines of:</li>
+</ul>
+
+
+<p>```ruby
+def self.compile(theme_id)
+  CustomTheme.find(theme_id).compile
+end</p>
+
+<p>private</p>
+
+<p>def compile
+  # perform the actual compilation
+end
+```</p>
+
+<ul>
+<li>Create a class with the name of the method and extract everything there (thanks <a href="https://twitter.com/bugant">@bugant</a> for reminding me of this refactor)</li>
+</ul>
+
+
+<p>I decided to go with the latter so I followed these steps:</p>
+
+<ol>
+<li>Create the class ThemeCompiler</li>
+<li>Give the new class an attribute for the object that hosted the original method (theme) and an attribute for each temporary variable in the method</li>
+<li>Give the new class a method &ldquo;compute&rdquo;</li>
+<li>Copy the body of the original method into compute</li>
+<li>Split the compute method in smaller methods</li>
+</ol>
+
+
+<h2>Final considerations</h2>
+
+<p>The first approach has the advantage of keeping everything in one class and use encapsulation properly, however it forces you to keep temp variables at the top of the compile method and increases the length of the class.</p>
+
+<p>The second one puts every temp variables in the constructor but has the disadvantage of being envious of the <code>CustomTheme</code> class data to the point that it forces the promotion of one CustomTheme private method to public. Something like <a href="http://en.wikipedia.org/wiki/Friend_class">friend classes</a> would have helped in this refactor.</p>
+
+<p>The final result, indipendent of the methodology, is that the compile method is now much clearer.</p>
+
+<h2>The code</h2>
+
+<p>```ruby</p>
+
+<h1>custom_theme.rb</h1>
+
+<p>def self.compile(theme_id)
+  ThemeCompiler.new(theme_id).compute
+end
+```</p>
+
+<p>```ruby</p>
+
+<h1>theme_compiler.rb</h1>
+
+<p>class ThemeCompiler
+  attr_reader :theme, :body, :tmp_themes_path, :tmp_asset_name, :widget, :compressed_body, :asset, :env</p>
+
+<p>  def initialize(theme_id)</p>
+
+<pre><code>@theme = CustomTheme.find(theme_id)
+@body = ERB.new(File.read(File.join(Rails.root, 'app', 'assets', 'stylesheets', 'widget_custom.scss.erb'))).result(theme.get_binding)
+@tmp_themes_path = File.join(Rails.root, 'tmp', 'themes')
+@tmp_asset_name = theme.widget_id.to_s
+@widget = theme.widget
+@env = if Rails.application.assets.is_a?(Sprockets::Index)
+  Rails.application.assets.instance_variable_get('@environment')
+else
+  Rails.application.assets
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  def compute</p>
+
+<pre><code>create_temporary_file
+compile
+compress
+upload
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  def compile</p>
+
+<pre><code>@asset = env.find_asset(tmp_asset_name)
+</code></pre>
+
+<p>  rescue Sass::SyntaxError => error</p>
+
+<pre><code>widget.user.notifications.create(:message =&gt; error.message.gsub(/ \(.+\)$/, ''), :type =&gt; 'error')
+theme.revert
+</code></pre>
+
+<p>  end</p>
+
+<p>  def compress</p>
+
+<pre><code>@compressed_body = ::Sass::Engine.new(asset.body, {
+  :syntax =&gt; :scss,
+  :cache =&gt; false,
+  :read_cache =&gt; false,
+  :style =&gt; :compressed
+}).render
+</code></pre>
+
+<p>  end</p>
+
+<p>  def create_temporary_file</p>
+
+<pre><code>FileUtils.mkdir_p(tmp_themes_path) unless File.directory?(tmp_themes_path)
+File.open(File.join(tmp_themes_path, "#{tmp_asset_name}.scss"), 'w') { |f| f.write(body) }
+</code></pre>
+
+<p>  end</p>
+
+<p>  def upload</p>
+
+<pre><code>theme.delete_asset
+
+if Rails.env.production?
+  FOG_STORAGE.directories.get(ENV['FOG_DIRECTORY']).files.create(
+    :key    =&gt; theme.asset_path(asset.digest),
+    :body   =&gt; StringIO.new(compressed_body),
+    :public =&gt; true,
+    :content_type =&gt; 'text/css'
+  )
+else
+  File.open(File.join(Rails.root, 'public', theme.asset_path(asset.digest)), 'w') { |f| f.write(compressed_body) }
+end
+
+theme.update_attribute(:digest, asset.digest)
+</code></pre>
+
+<p>  end
+end
+```</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[How to create custom stylesheets dynamically with Rails and Sass]]></title>
+    <link href="http://matteodepalo.github.io/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/"/>
+    <updated>2013-01-31T12:24:00+01:00</updated>
+    <id>http://matteodepalo.github.io/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass</id>
+    <content type="html"><![CDATA[<p>At <a href="http://goresponsa.com">Responsa</a> we have the need to create custom stylesheets for our widget administrators. In order to accomplish this we leverage the power of Sass and the Rails asset pipeline.</p>
+
+<p>In this blog post I&rsquo;ll show you how we implemented this feature and how to deploy it to an Heroku + Amazon S3 production environment.</p>
+
+<h2>Tools</h2>
+
+<p>Let&rsquo;s take a loot at our toolbelt:</p>
+
+<ul>
+<li>Sass and Sprockets to dynamically compile the asset</li>
+<li>Sidekiq to delay the compilation and upload to S3, which in our case takes between 10 and 15 seconds</li>
+<li>Fog gem to store on S3</li>
+</ul>
+
+
+<h2>Models</h2>
+
+<p>We have 2 models: Widget and CustomTheme</p>
+
+<p>```ruby
+class CustomTheme
+  include Mongoid::Document</p>
+
+<p>  belongs_to :widget</p>
+
+<p>  field :main_color, :type => String, :default => &ldquo;#2ba6cb&rdquo;
+  field :text_font, :type => String, :default => &ldquo;\"Helvetica Neue\&rdquo;, \&ldquo;Helvetica\&rdquo;, Helvetica, Arial, sans-serif"
+  field :digest, :type => String
+end
+```</p>
+
+<p>```ruby
+class Widget
+  include Mongoid::Document</p>
+
+<p>  has_one :custom_theme
+end
+```</p>
+
+<p>The custom theme model has the fields used in a widget_custom.scss stylesheet built with the <a href="http://foundation.zurb.com">Foundation</a> CSS framework:</p>
+
+<p>```css
+$mainColor: &lt;%= main_color %>;
+$bodyFontFamily: &lt;%= text_font %>;</p>
+
+<p>@import &ldquo;widget/index&rdquo;;
+```</p>
+
+<h2>Compilation</h2>
+
+<p>CustomTheme has a method we call every time we need to compile a fresh asset which occurs when the fields change. It performs a few actions in order:</p>
+
+<ol>
+<li>Write a temporary and not compiled scss file with the variables taken from the custom theme and give it a unique name.</li>
+<li>Use the Sprockets environment to find this temporary file and compile it.</li>
+<li>Compress the compiled css file.</li>
+<li>Store it either on amazon S3 or the file system.</li>
+<li>Delete the previous asset.</li>
+</ol>
+
+
+<h2>Caveats</h2>
+
+<p>Developing this solution we encountered a few problems mainly due to our production setup and the way Sprockets works:</p>
+
+<ul>
+<li>If the compilation fails we need to restore the previous asset. To accomplish this we basically keep track of the previous asset and revert to it if anything goes wrong.</li>
+<li>In production we need to avoid using the cached Sprockets environment, else Sprockets will cache the entire file system at the beginning.</li>
+<li>It&rsquo;s important to run validations of the custom theme fields in order to avoid css injection.</li>
+</ul>
+
+
+<h2>Code</h2>
+
+<p>```ruby</p>
+
+<h1>application.rb</h1>
+
+<p>config.assets.paths &lt;&lt; Rails.root.join(&lsquo;tmp&rsquo;, &lsquo;themes&rsquo;)
+```</p>
+
+<p>```ruby
+COMPILED_FIELDS = [:main_color, :text_font]</p>
+
+<p>after_save :compile, :if => :compiled_attributes_changed?</p>
+
+<p>def self.compile(theme_id)
+  theme = CustomTheme.find(theme_id)
+  body = ERB.new(File.read(File.join(Rails.root, &lsquo;app&rsquo;, &lsquo;assets&rsquo;, &lsquo;stylesheets&rsquo;, &lsquo;widget_custom.scss.erb&rsquo;))).result(theme.get_binding)
+  tmp_themes_path = File.join(Rails.root, &lsquo;tmp&rsquo;, &lsquo;themes&rsquo;)
+  tmp_asset_name = theme.widget_id.to_s</p>
+
+<p>  FileUtils.mkdir_p(tmp_themes_path) unless File.directory?(tmp_themes_path)
+  File.open(File.join(tmp_themes_path, &ldquo;#{tmp_asset_name}.scss&rdquo;), &lsquo;w&rsquo;) { |f| f.write(body) }</p>
+
+<p>  widget = theme.widget</p>
+
+<p>  begin</p>
+
+<pre><code>env = if Rails.application.assets.is_a?(Sprockets::Index)
+  Rails.application.assets.instance_variable_get('@environment')
+else
+  Rails.application.assets
+end
+
+asset = env.find_asset(tmp_asset_name)
+
+compressed_body = ::Sass::Engine.new(asset.body, {
+  :syntax =&gt; :scss,
+  :cache =&gt; false,
+  :read_cache =&gt; false,
+  :style =&gt; :compressed
+}).render
+
+theme.delete_asset
+
+if Rails.env.production?
+  FOG_STORAGE.directories.get(ENV['FOG_DIRECTORY']).files.create(
+    :key    =&gt; theme.asset_path(asset.digest),
+    :body   =&gt; StringIO.new(compressed_body),
+    :public =&gt; true,
+    :content_type =&gt; 'text/css'
+  )
+else
+  File.open(File.join(Rails.root, 'public', theme.asset_path(asset.digest)), 'w') { |f| f.write(compressed_body) }
+end
+
+theme.update_attribute(:digest, asset.digest)
+</code></pre>
+
+<p>  rescue Sass::SyntaxError => error</p>
+
+<pre><code>theme.revert
+</code></pre>
+
+<p>  end</p>
+
+<p>  widget.save
+end</p>
+
+<p>def revert
+  # Revert to your previous theme and notify the user of the failure
+end</p>
+
+<p>def get_binding
+  binding
+end</p>
+
+<p>def delete_asset
+  return unless digest?</p>
+
+<p>  if Rails.env.production?</p>
+
+<pre><code>FOG_STORAGE.directories.get(ENV['FOG_DIRECTORY']).files.get(asset_path).try(:destroy)
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>File.delete(File.join(Rails.root, 'public', asset_path))
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>def asset_path(digest)
+  &ldquo;assets/themes/#{asset_name(digest)}.css&rdquo;
+end</p>
+
+<p>def asset_name(digest = self.digest)
+   &ldquo;#{widget_id}&ndash;#{digest}&rdquo;
+end</p>
+
+<p>def asset_url
+  &ldquo;#{ActionController::Base.asset_host}/#{asset_path}&rdquo;
+end</p>
+
+<p>private</p>
+
+<p>def compile
+  self.class.delay.compile(id)
+end</p>
+
+<p>def compiled_attributes_changed?
+  changed_attributes.keys.map(&amp;:to_sym).any? { |f| COMPILED_FIELDS.include?(f) }
+end
+```</p>
+
+<p>Finally we use the asset url in our template:</p>
+
+<p><code>ruby
+&lt;%= stylesheet_link_tag @custom_theme.asset_url %&gt;
+</code></p>
+]]></content>
+  </entry>
+  
+</feed>

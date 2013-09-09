@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: documentation | Matteo Depalo's Blog]]></title>
+  <link href="http://matteodepalo.github.io/blog/categories/documentation/atom.xml" rel="self"/>
+  <link href="http://matteodepalo.github.io/"/>
+  <updated>2013-09-09T16:54:35+02:00</updated>
+  <id>http://matteodepalo.github.io/</id>
+  <author>
+    <name><![CDATA[Matteo Depalo]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Rails API documentation]]></title>
+    <link href="http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation/"/>
+    <updated>2013-07-24T12:46:00+02:00</updated>
+    <id>http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation</id>
+    <content type="html"><![CDATA[<p>Lately I&rsquo;ve been working on a new project for mobile called Playround. My job is to design and implement the API. I must say that with the help of Rails 4 and Rails API the experience has been the smoothest possible. With requests and models specs I can test the whole application at blazing speeds.
+At a certain point however I faced an issue: documentation.</p>
+
+<p>Especially in the first stages of development, working inside a team mandates transparency about the current status of the API so the mobile developers know exactly what to expect from the server while testing locally.
+Of course documenting is exceptionally useful also for the mature stage of the project when we will have to publish the API documentation in a beautiful layout. In order to achieve documentation nirvana I started experimenting various ways of building it, possibly in a way that would output something I can use for our public doc.</p>
+
+<p>At first I started putting &ldquo;debugger&rdquo; in every test and printing the output of the response, however this task got tedious pretty fast. Looking around I found a <a href="https://github.com/zipmark/rspec_api_documentation">gem</a> that compiles a documentation, however it forced me to use a specific dsl which means I had to rewrite my tests. When I started I used the convention adopted by the first requests tests you find with scaffolds and I wanted to keep that.</p>
+
+<p>In order to achieve this I wrote a simple script in the spec helper that does the following things:</p>
+
+<ul>
+<li>For every request spec file it creates a corresponding txt file inside the doc folder.</li>
+<li>For each test the path, status, request and response are written inside the corresponding file.</li>
+</ul>
+
+
+<p>Request tests have to follow a convention:</p>
+
+<ul>
+<li>Top level descriptions are named after the model (plural form) followed by the word &ldquo;Requests&rdquo;. For the model Arena it would be &ldquo;Arenas Requests&rdquo;.</li>
+<li>Actions are in the form of &ldquo;VERB path&rdquo;. For the show action of the Arenas controller it would be &ldquo;GET /arenas/:id&rdquo;.</li>
+</ul>
+
+
+<p>The code:</p>
+
+<p>```ruby
+config.after(:each, type: :request) do
+  if response</p>
+
+<pre><code>example_group = example.metadata[:example_group]
+example_groups = []
+
+while example_group
+  example_groups &lt;&lt; example_group
+  example_group = example_group[:example_group]
+end
+
+action = example_groups[-2][:description_args].first if example_groups[-2]
+example_groups[-1][:description_args].first.match(/(\w+)\sRequests/)
+file_name = $1.underscore
+
+File.open(File.join(Rails.root, "/docs/#{file_name}.txt"), 'a') do |f|
+  f.write "#{action} \n\n"
+
+  request_body = request.body.read
+
+  if request.headers['Authorization']
+    f.write "Headers: \n\n"
+    f.write "Authorization: #{request.headers['Authorization']} \n\n"
+  end
+
+  if request_body.present?
+    f.write "Request body: \n\n"
+    f.write "#{JSON.pretty_generate(JSON.parse(request_body))} \n\n"
+  end
+
+  f.write "Status: #{response.status} \n\n"
+
+  if response.body.present?
+    f.write "Response body: \n\n"
+    f.write "#{JSON.pretty_generate(JSON.parse(response.body))} \n\n"
+  end
+end unless response.status == 401 || response.status == 403 || response.status == 301
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Example output for &ldquo;Rounds Requests&rdquo; POST action:</p>
+
+<p>```
+POST /v1/rounds</p>
+
+<p>Headers:</p>
+
+<p>Authorization: Token token=&ldquo;36260243e091bfe56f96483592afc723&rdquo;</p>
+
+<p>Request body:</p>
+
+<p>{
+  &ldquo;round&rdquo;: {</p>
+
+<pre><code>"game_name": "dota2",
+"arena": {
+  "foursquare_id": "5104"
+}
+</code></pre>
+
+<p>  }
+}</p>
+
+<p>Status: 201</p>
+
+<p>Response body:</p>
+
+<p>{
+  &ldquo;round&rdquo;: {</p>
+
+<pre><code>"id": "ec6add8b-709f-475d-8f06-8ad44d8a95d3",
+"state": "waiting_for_players",
+"created_at": "2013-07-24T12:16:14.700Z",
+"game": {
+  "id": "1c59b30e-599a-4ea1-9d5c-a364079528ad",
+  "name": "dota2",
+  "display_name": "Dota 2",
+  "picture_url": "http://localhost:8080/assets/dota2.jpg",
+  "teams": [
+    {
+      "name": "radiant",
+      "display_name": "Radiant",
+      "number_of_players": 5
+    },
+    {
+      "name": "dire",
+      "display_name": "Dire",
+      "number_of_players": 5
+    }
+  ]
+},
+"arena": {
+  "id": "5c593125-a114-4a1a-936f-2cc4b21fa0a8",
+  "name": "Clinton St. Baking Co. &amp; Restaurant",
+  "latitude": 40.721294,
+  "longitude": -73.983994,
+  "foursquare_id": "5104"
+},
+"teams": [
+
+],
+"user": {
+  "id": "87fb0fe4-2f0c-400d-ba00-000c3f5ea642",
+  "name": "Test User",
+  "picture_url": "http://graph.facebook.com/12132/picture?type=square",
+  "facebook_id": "12132"
+}
+</code></pre>
+
+<p>  }
+}
+```</p>
+
+<p>I&rsquo;m excluding 401, 403 and 301 status codes because those cases are grouped and documented inside a common area in my documentation, but there is nothing special about them.</p>
+
+<p>Now to the beautiful layout part. Right now I&rsquo;m copy pasting those response and requests bodies inside the templates of a <a href="https://github.com/playround/playround-developer">Jekyll application</a> hosted on <a href="http://developer.goplayround.com">Github Pages</a>. One way to automate this would be to use a templating language in order to output html documents instead of plain txt files. Since the production documentation should change way less frequently than the development one, this is a automation I can skip for now. It&rsquo;s far more important to keep a fresh copy of the features for internal usage, which can be rebuilt anytime by anyone with no effort.</p>
+]]></content>
+  </entry>
+  
+</feed>

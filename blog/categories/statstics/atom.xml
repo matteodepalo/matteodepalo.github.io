@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: statstics | Matteo Depalo's Blog]]></title>
+  <link href="http://matteodepalo.github.io/blog/categories/statstics/atom.xml" rel="self"/>
+  <link href="http://matteodepalo.github.io/"/>
+  <updated>2013-09-09T16:54:35+02:00</updated>
+  <id>http://matteodepalo.github.io/</id>
+  <author>
+    <name><![CDATA[Matteo Depalo]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Cube loves Geckoboard]]></title>
+    <link href="http://matteodepalo.github.io/blog/2012/07/23/cube-loves-geckoboard/"/>
+    <updated>2012-07-23T12:02:00+02:00</updated>
+    <id>http://matteodepalo.github.io/blog/2012/07/23/cube-loves-geckoboard</id>
+    <content type="html"><![CDATA[<h2>Introduction</h2>
+
+<p>This is a summary of my experiences and a mini-guide regarding the deploying and usage of a Cube server and Geckoboard to track statistics at Responsa.</p>
+
+<p>I&rsquo;ll explain how I deployed Cube to a VPS in the cloud and how I&rsquo;ve integrated it in Responsa. I&rsquo;ll also talk about Geckoboard and how we used it to draw graphs based on metrics extracted from Cube, but first here&rsquo;s a brief description of Cube and Geckoboard.</p>
+
+<h3>Cube</h3>
+
+<p><a href="http://square.github.com/cube/">Cube</a> is a system for collecting timestamped events and deriving metrics. By collecting events rather than metrics, Cube lets you compute aggregate statistics post hoc. It also enables richer analysis, such as quantiles and histograms of arbitrary event sets.</p>
+
+<h3>Geckoboard</h3>
+
+<p><a href="http://www.geckoboard.com">Geckoboard</a> is a service for drawing graphs and statistics and organizing them in widgets that populate dashboards.</p>
+
+<h2>Deploying</h2>
+
+<p>To deploy the Cube server I&rsquo;ve chosen Linode, a service that gives you an empty Ubuntu Server virtual machine in the cloud. After the creation of the machine you can just ssh inside and start installing your server.</p>
+
+<p>To make the deploying process automatic I&rsquo;ve chosen <a href="http://wiki.opscode.com/display/chef/About">chef</a>, and in particular <a href="http://wiki.opscode.com/display/chef/Chef+Solo">chef-solo</a>.</p>
+
+<p>Since chef uses ruby we need to install it first in our machine so just run these commands to get some basic stuff:</p>
+
+<p><code>bash
+apt-get -y update
+apt-get -y install curl git-core python-software-properties
+</code></p>
+
+<p><code>bash
+curl -L https://raw.github.com/fesplugas/rbenv-installer/master/bin/rbenv-installer | bash
+vim ~/.bashrc # add rbenv to the top
+. ~/.bashrc
+rbenv bootstrap-ubuntu-10-04
+rbenv install 1.9.3-p125
+rbenv global 1.9.3-p125
+gem install bundler --no-ri --no-rdoc
+rbenv rehash
+</code></p>
+
+<p>Then you can install Cube with:</p>
+
+<p><code>bash
+git clone git://github.com/matteodepalo/cube.git
+cd cube
+</code></p>
+
+<p>Now all you need to do is to download the cookbooks and run chef:</p>
+
+<p><code>bash
+gem install librarian
+librarian-chef install
+chef-solo -c solo.rb
+</code></p>
+
+<p>And your Cube server should be up and running ready to track events!</p>
+
+<h2>Tracking events</h2>
+
+<p>We use Ruby on Rails as our stack so I&rsquo;ve chosen the <a href="https://github.com/codykrieger/cube-ruby">cube-ruby</a> gem to communicate with the server. With this gem you can talk with the <a href="https://github.com/square/cube/wiki/Collector">Cube collector</a> in order to track events.</p>
+
+<p>For example if we want to track a request we can write:</p>
+
+<p><code>ruby
+$cube = Cube::Client.new 'your-host.com'
+$cube.send "request", :value =&gt; 'somevalue'
+</code></p>
+
+<h2>Analysis</h2>
+
+<p>To compute metrics I&rsquo;ve created a ruby gem called <a href="https://github.com/matteodepalo/cube-evaluator">cube-evaluator</a>, which talks with the <a href="https://github.com/square/cube/wiki/Collector">Cube evaluator</a>.</p>
+
+<p>Let&rsquo;s say we want the daily requests on our website in this month we can write:</p>
+
+<p>```ruby
+$cube_evaluator = Cube::Evaluator.new &lsquo;your-host.com&rsquo;
+daily_requests = $cube_evaluator.metric(</p>
+
+<pre><code>               :expression =&gt; 'sum(request)',
+               :start =&gt; 1.month.ago,
+               :stop =&gt; Time.now,
+               :step =&gt; '1day'
+             )
+</code></pre>
+
+<p>```</p>
+
+<p><code>daily_requests</code> will be an Hash containing the array of times and the array of corresponding values</p>
+
+<h2>Drawing</h2>
+
+<p>Geckoboard needs an endpoint in your server to poll in order to draw the data. To ease the creation of these endpoints I&rsquo;ve improved and used the <a href="https://github.com/matteodepalo/chameleon">chameleon gem</a>. Just add it to your gemfile</p>
+
+<p><code>ruby
+gem 'chameleon', :git =&gt; 'git://github.com/matteodepalo/chameleon.git'
+</code></p>
+
+<p>then run bundle to install it</p>
+
+<p><code>bash
+bundle install
+</code></p>
+
+<p>Let&rsquo;s draw the daily_requests now. Create a line widget graph</p>
+
+<p><code>bash
+rails g chameleon:widget requests line
+</code></p>
+
+<p>and use your daily_requests hash to populate it</p>
+
+<p>```ruby
+Chameleon::Widget.new :requests do
+  key &ldquo;3618c90ec02d5a57061ad7b78afcbb050e50b608&rdquo;
+  type &ldquo;line&rdquo;
+  data do</p>
+
+<pre><code>{
+  :items =&gt; daily_requests[:values],
+  :x_axis =&gt; daily_requests[:times],
+  :y_axis =&gt; [daily_requests[:times].min, daily_requests[:times].max]
+}
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Congrats! You are now tracking statistics in the coolest way possible ;)</p>
+]]></content>
+  </entry>
+  
+</feed>

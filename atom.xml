@@ -1,112 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
 
-<!DOCTYPE html>
-<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
-<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
-<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
-<head>
-  <meta charset="utf-8">
-  <title>Matteo Depalo's Blog</title>
-  <meta name="author" content="Matteo Depalo">
-
-  
-  <meta name="description" content="Lately I&rsquo;ve been working on a new project for mobile called Playround. My job is to design and implement the API. I must say that with the help &hellip;">
-  
-
-  <!-- http://t.co/dKP3o1e -->
-  <meta name="HandheldFriendly" content="True">
-  <meta name="MobileOptimized" content="320">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  
-  <link rel="canonical" href="http://matteodepalo.github.io">
-  <link href="/favicon.png" rel="icon">
-  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
-  <link href="/atom.xml" rel="alternate" title="Matteo Depalo's Blog" type="application/atom+xml">
-  <script src="/javascripts/modernizr-2.0.js"></script>
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
-  <script src="/javascripts/octopress.js" type="text/javascript"></script>
-  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
-<!-- <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css"> -->
-<!-- <link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css"> -->
-<link rel="stylesheet" type="text/css" href="//cloud.typography.com/7390232/803822/css/fonts.css" />
-  
-  <script type="text/javascript">
-    var _gaq = _gaq || [];
-    _gaq.push(['_setAccount', 'UA-33611779-1']);
-    _gaq.push(['_trackPageview']);
-
-    (function() {
-      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-    })();
-  </script>
-
-
-</head>
-
-<body   >
-  <header role="banner"><hgroup>
-  <h1><a href="/">Matteo Depalo's Blog</a></h1>
-  
-    <h2>Will driven life.</h2>
-  
-</hgroup>
-
-</header>
-  <nav role="navigation"><ul class="subscription" data-subscription="rss">
-  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
-  
-</ul>
-  
-<form action="http://google.com/search" method="get">
-  <fieldset role="search">
-    <input type="hidden" name="q" value="site:matteodepalo.github.io" />
-    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
-  </fieldset>
-</form>
-  
-<ul class="main-navigation">
-  <li><a href="/">Blog</a></li>
-  <li><a href="/blog/archives">Archives</a></li>
-</ul>
-
-</nav>
-  <div id="main">
-    <div id="content">
-      <div class="blog-index">
-  
-  
-  
-    <article>
-      
-  <header>
+  <title><![CDATA[Matteo Depalo's Blog]]></title>
+  <link href="http://matteodepalo.github.io/atom.xml" rel="self"/>
+  <link href="http://matteodepalo.github.io/"/>
+  <updated>2013-09-09T16:54:35+02:00</updated>
+  <id>http://matteodepalo.github.io/</id>
+  <author>
+    <name><![CDATA[Matteo Depalo]]></name>
     
-      <h1 class="entry-title"><a href="/blog/2013/07/24/rails-api-documentation/">Rails API Documentation</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
 
   
-
-
-<time datetime="2013-07-24T12:46:00+02:00" pubdate data-updated="true">Jul 24<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Lately I&rsquo;ve been working on a new project for mobile called Playround. My job is to design and implement the API. I must say that with the help of Rails 4 and Rails API the experience has been the smoothest possible. With requests and models specs I can test the whole application at blazing speeds.
+  <entry>
+    <title type="html"><![CDATA[Rails API documentation]]></title>
+    <link href="http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation/"/>
+    <updated>2013-07-24T12:46:00+02:00</updated>
+    <id>http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation</id>
+    <content type="html"><![CDATA[<p>Lately I&rsquo;ve been working on a new project for mobile called Playround. My job is to design and implement the API. I must say that with the help of Rails 4 and Rails API the experience has been the smoothest possible. With requests and models specs I can test the whole application at blazing speeds.
 At a certain point however I faced an issue: documentation.</p>
 
 <p>Especially in the first stages of development, working inside a team mandates transparency about the current status of the API so the mobile developers know exactly what to expect from the server while testing locally.
@@ -343,42 +255,15 @@ Of course documenting is exceptionally useful also for the mature stage of the p
 <p>I&rsquo;m excluding 401, 403 and 301 status codes because those cases are grouped and documented inside a common area in my documentation, but there is nothing special about them.</p>
 
 <p>Now to the beautiful layout part. Right now I&rsquo;m copy pasting those response and requests bodies inside the templates of a <a href="https://github.com/playround/playround-developer">Jekyll application</a> hosted on <a href="http://developer.goplayround.com">Github Pages</a>. One way to automate this would be to use a templating language in order to output html documents instead of plain txt files. Since the production documentation should change way less frequently than the development one, this is a automation I can skip for now. It&rsquo;s far more important to keep a fresh copy of the features for internal usage, which can be rebuilt anytime by anyone with no effort.</p>
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/04/08/minimum-viable-stack/">Minimum Viable Stack</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-04-08T14:55:00+02:00" pubdate data-updated="true">Apr 8<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>After <a href="http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/">migrating to my own VPS solution from Heroku</a> at <a href="https://goresponsa.com">Responsa</a>, I&rsquo;ve traveled across the internet land in order to select and build a solid production stack.
+  <entry>
+    <title type="html"><![CDATA[minimum viable stack]]></title>
+    <link href="http://matteodepalo.github.io/blog/2013/04/08/minimum-viable-stack/"/>
+    <updated>2013-04-08T14:55:00+02:00</updated>
+    <id>http://matteodepalo.github.io/blog/2013/04/08/minimum-viable-stack</id>
+    <content type="html"><![CDATA[<p>After <a href="http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/">migrating to my own VPS solution from Heroku</a> at <a href="https://goresponsa.com">Responsa</a>, I&rsquo;ve traveled across the internet land in order to select and build a solid production stack.
 Now that I think I&rsquo;ve reached it I want to share my choices in case anyone has to go through the same process.</p>
 
 <h2>Service selection criterion</h2>
@@ -443,42 +328,15 @@ The search feature is also useful.</p>
 <p>I don&rsquo;t like when I close my laptop and after reopening it ssh hangs. To solve that issue I use <a href="http://mosh.mit.edu/">mosh</a> which needs a server installed on the machine. Luckily there is a <a href="http://community.opscode.com/cookbooks/mosh">cookbook</a> also for that.</p>
 
 <p>You&rsquo;re welcome to share your stack in the comments below.</p>
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/">How I Migrated From Heroku to Digital Ocean With Chef and Capistrano</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-03-07T11:24:00+01:00" pubdate data-updated="true">Mar 7<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>UPDATE:</p>
+  <entry>
+    <title type="html"><![CDATA[How I migrated from Heroku to Digital Ocean with Chef and Capistrano]]></title>
+    <link href="http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/"/>
+    <updated>2013-03-07T11:24:00+01:00</updated>
+    <id>http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano</id>
+    <content type="html"><![CDATA[<p>UPDATE:</p>
 
 <ul>
 <li>Removed ElasticSearch and MongoDB recipes since they were not so useful for this tutorial.</li>
@@ -1328,42 +1186,15 @@ The search feature is also useful.</p>
 
 
 <p>I must thank czarneckid for sharing <a href="https://gist.github.com/czarneckid/4639793">his setup on Github</a> from which I stole some useful portions and also <a href="https://twitter.com/bugant">@bugant</a> for his patience.</p>
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/02/01/refactor-replace-method-with-method-object/">Refactor: Replace Method With Method Object</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-02-01T11:40:00+01:00" pubdate data-updated="true">Feb 1<span>st</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>In my previous <a href="http://matteodepalo.github.com/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/">post</a> I described how to implement a feature that allows our customers to create custom stylesheets for their widget.
+  <entry>
+    <title type="html"><![CDATA[Refactor: Replace Method with Method Object]]></title>
+    <link href="http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object/"/>
+    <updated>2013-02-01T11:40:00+01:00</updated>
+    <id>http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object</id>
+    <content type="html"><![CDATA[<p>In my previous <a href="http://matteodepalo.github.com/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/">post</a> I described how to implement a feature that allows our customers to create custom stylesheets for their widget.
 Altough it worked just fine, the <code>compile</code> class method of the <code>CustomTheme</code> class was blatantly big, so I decided to refactor it.</p>
 
 <p>The biggest issue I faced was that since this was a class method, in order to split it I should have created many little class methods and pass around the theme instance; a solution that didn&rsquo;t satisfy me. The reason <code>compile</code> needed to stay a class method is that I don&rsquo;t want to serialize the whole <code>CustomTheme</code> object and pass it to Sidekiq. Having considered this premises I could proceed in two ways:</p>
@@ -1565,42 +1396,15 @@ Altough it worked just fine, the <code>compile</code> class method of the <code>
 </span><span class='line'><span class="k">end</span>
 </span></code></pre></td></tr></table></div></figure>
 
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/">How to Create Custom Stylesheets Dynamically With Rails and Sass</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-01-31T12:24:00+01:00" pubdate data-updated="true">Jan 31<span>st</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>At <a href="http://goresponsa.com">Responsa</a> we have the need to create custom stylesheets for our widget administrators. In order to accomplish this we leverage the power of Sass and the Rails asset pipeline.</p>
+  <entry>
+    <title type="html"><![CDATA[How to create custom stylesheets dynamically with Rails and Sass]]></title>
+    <link href="http://matteodepalo.github.io/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/"/>
+    <updated>2013-01-31T12:24:00+01:00</updated>
+    <id>http://matteodepalo.github.io/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass</id>
+    <content type="html"><![CDATA[<p>At <a href="http://goresponsa.com">Responsa</a> we have the need to create custom stylesheets for our widget administrators. In order to accomplish this we leverage the power of Sass and the Rails asset pipeline.</p>
 
 <p>In this blog post I&rsquo;ll show you how we implemented this feature and how to deploy it to an Heroku + Amazon S3 production environment.</p>
 
@@ -1894,42 +1698,15 @@ Altough it worked just fine, the <code>compile</code> class method of the <code>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;%=</span> <span class="n">stylesheet_link_tag</span> <span class="vi">@custom_theme</span><span class="o">.</span><span class="n">asset_url</span> <span class="o">%&gt;</span>
 </span></code></pre></td></tr></table></div></figure>
 
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/07/23/cube-loves-geckoboard/">Cube Loves Geckoboard</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-07-23T12:02:00+02:00" pubdate data-updated="true">Jul 23<span>rd</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h2>Introduction</h2>
+  <entry>
+    <title type="html"><![CDATA[Cube loves Geckoboard]]></title>
+    <link href="http://matteodepalo.github.io/blog/2012/07/23/cube-loves-geckoboard/"/>
+    <updated>2012-07-23T12:02:00+02:00</updated>
+    <id>http://matteodepalo.github.io/blog/2012/07/23/cube-loves-geckoboard</id>
+    <content type="html"><![CDATA[<h2>Introduction</h2>
 
 <p>This is a summary of my experiences and a mini-guide regarding the deploying and usage of a Cube server and Geckoboard to track statistics at Responsa.</p>
 
@@ -2090,143 +1867,7 @@ Altough it worked just fine, the <code>compile</code> class method of the <code>
 
 
 <p>Congrats! You are now tracking statistics in the coolest way possible ;)</p>
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  <div class="pagination">
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
-</div>
-<aside class="sidebar">
-  
-    <section>
-  <h1>Recent Posts</h1>
-  <ul id="recent_posts">
-    
-      <li class="post">
-        <a href="/blog/2013/07/24/rails-api-documentation/">Rails API Documentation</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/04/08/minimum-viable-stack/">Minimum Viable Stack</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/">How I Migrated From Heroku to Digital Ocean With Chef and Capistrano</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/02/01/refactor-replace-method-with-method-object/">Refactor: Replace Method With Method Object</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/">How to Create Custom Stylesheets Dynamically With Rails and Sass</a>
-      </li>
-    
-  </ul>
-</section>
-
-<section>
-  <h1>GitHub Repos</h1>
-  <ul id="gh_repos">
-    <li class="loading">Status updating&#8230;</li>
-  </ul>
-  
-  <a href="https://github.com/matteodepalo">@matteodepalo</a> on GitHub
-  
-  <script type="text/javascript">
-    $(document).ready(function(){
-        if (!window.jXHR){
-            var jxhr = document.createElement('script');
-            jxhr.type = 'text/javascript';
-            jxhr.src = '/javascripts/libs/jXHR.js';
-            var s = document.getElementsByTagName('script')[0];
-            s.parentNode.insertBefore(jxhr, s);
-        }
-
-        github.showRepos({
-            user: 'matteodepalo',
-            count: 0,
-            skip_forks: true,
-            target: '#gh_repos'
-        });
-    });
-  </script>
-  <script src="/javascripts/github.js" type="text/javascript"> </script>
-</section>
-
-
-
-<section class="googleplus">
-  <h1>
-    <a href="https://plus.google.com/102959180704550392673?rel=author">
-      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
-      Google+
-    </a>
-  </h1>
-</section>
-
-
-
-  
-</aside>
-
-    </div>
-  </div>
-  <footer role="contentinfo"><p>
-  Copyright &copy; 2013 - Matteo Depalo -
-  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
-</p>
-
-</footer>
-  
-
-<script type="text/javascript">
-      var disqus_shortname = 'matteodepalo';
-      
-        
-        var disqus_script = 'count.js';
-      
-    (function () {
-      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
-      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    }());
-</script>
-
-
-
-
-
-  <script type="text/javascript">
-    (function() {
-      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
-      script.src = 'https://apis.google.com/js/plusone.js';
-      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
-    })();
-  </script>
-
-
-
-  <script type="text/javascript">
-    (function(){
-      var twitterWidgets = document.createElement('script');
-      twitterWidgets.type = 'text/javascript';
-      twitterWidgets.async = true;
-      twitterWidgets.src = '//platform.twitter.com/widgets.js';
-      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
-    })();
-  </script>
-
-
-
-
-
-</body>
-</html>
+</feed>
