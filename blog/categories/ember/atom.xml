@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ember | Matteo Depalo's Blog]]></title>
   <link href="http://matteodepalo.github.io/blog/categories/ember/atom.xml" rel="self"/>
   <link href="http://matteodepalo.github.io/"/>
-  <updated>2014-01-03T17:23:35+01:00</updated>
+  <updated>2014-01-03T17:24:48+01:00</updated>
   <id>http://matteodepalo.github.io/</id>
   <author>
     <name><![CDATA[Matteo Depalo]]></name>
@@ -18,7 +18,7 @@
     <link href="http://matteodepalo.github.io/blog/2014/01/03/ember-integration-testing-with-konacha/"/>
     <updated>2014-01-03T17:00:36+01:00</updated>
     <id>http://matteodepalo.github.io/blog/2014/01/03/ember-integration-testing-with-konacha</id>
-    <content type="html"><![CDATA[<p>Ember is truly an awesome framework. The exciting community and the quality of the code brought joy to front-end development.
+    <content type="html"><![CDATA[<p>Ember is truly an awesome framework. The exciting community and the quality of the code has brought joy to front-end development.
 That said, testing (more importantly integration testing) is a part of the framework that isn&rsquo;t quite there yet, and for various reasons:</p>
 
 <ul>
