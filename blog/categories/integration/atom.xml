@@ -4,7 +4,7 @@
   <title><![CDATA[Category: integration | Matteo Depalo's Blog]]></title>
   <link href="http://matteodepalo.github.io/blog/categories/integration/atom.xml" rel="self"/>
   <link href="http://matteodepalo.github.io/"/>
-  <updated>2014-01-03T19:51:12+01:00</updated>
+  <updated>2014-01-03T19:54:13+01:00</updated>
   <id>http://matteodepalo.github.io/</id>
   <author>
     <name><![CDATA[Matteo Depalo]]></name>
@@ -185,22 +185,31 @@ window.server = sinon.fakeServer.create()</p>
 <p>Beware of timers. If your application has long running or self scheduling timers, every function that uses <code>wait</code> under the hood, like <code>visit</code>, will never resolve. It has been discussed that you should be able to explicitly avoid waiting for specific timers during tests, but in the meanwhile you can use the following hack:</p>
 
 <p>Before:
-<code>coffeescript
-Ember.run.later(this, -&gt;
-  # execute something
-, 1000)
-</code></p>
+```coffeescript
+tick: &ndash;>
+  # do something</p>
+
+<p>  Ember.run.later(this, &ndash;></p>
+
+<pre><code>@tick()
+</code></pre>
+
+<p>  , 1000)
+```</p>
 
 <p>After:
 ```coffeescript
-setTimeout(=>
-  Ember.run(=></p>
+tick: &ndash;>
+  # do something</p>
 
-<pre><code># execute something
+<p>  setTimeout(=></p>
+
+<pre><code>Ember.run(=&gt;
+  @tick()
+)
 </code></pre>
 
-<p>  )
-, 1000)
+<p>  , 1000)
 ```</p>
 
 <p>This way you won&rsquo;t use the Ember internal setTimeout (which is not optimal), but you won&rsquo;t risk of executing async code outside of the run loop while allowing your tests to pass.</p>

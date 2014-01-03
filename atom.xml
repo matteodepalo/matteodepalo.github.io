@@ -4,7 +4,7 @@
   <title><![CDATA[Matteo Depalo's Blog]]></title>
   <link href="http://matteodepalo.github.io/atom.xml" rel="self"/>
   <link href="http://matteodepalo.github.io/"/>
-  <updated>2014-01-03T19:51:12+01:00</updated>
+  <updated>2014-01-03T19:54:13+01:00</updated>
   <id>http://matteodepalo.github.io/</id>
   <author>
     <name><![CDATA[Matteo Depalo]]></name>
@@ -223,9 +223,15 @@ For example:</p>
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nx">Ember</span><span class="p">.</span><span class="nx">run</span><span class="p">.</span><span class="nx">later</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nf">-&gt;</span>
-</span><span class='line'>  <span class="c1"># execute something</span>
-</span><span class='line'><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nv">tick: </span><span class="nf">-&gt;</span>
+</span><span class='line'>  <span class="c1"># do something</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">Ember</span><span class="p">.</span><span class="nx">run</span><span class="p">.</span><span class="nx">later</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nf">-&gt;</span>
+</span><span class='line'>    <span class="nx">@tick</span><span class="p">()</span>
+</span><span class='line'>  <span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -236,11 +242,17 @@ For example:</p>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nx">setTimeout</span><span class="p">(</span><span class="o">=&gt;</span>
-</span><span class='line'>  <span class="nx">Ember</span><span class="p">.</span><span class="nx">run</span><span class="p">(</span><span class="o">=&gt;</span>
-</span><span class='line'>    <span class="c1"># execute something</span>
-</span><span class='line'>  <span class="p">)</span>
-</span><span class='line'><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nv">tick: </span><span class="nf">-&gt;</span>
+</span><span class='line'>  <span class="c1"># do something</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">setTimeout</span><span class="p">(</span><span class="o">=&gt;</span>
+</span><span class='line'>    <span class="nx">Ember</span><span class="p">.</span><span class="nx">run</span><span class="p">(</span><span class="o">=&gt;</span>
+</span><span class='line'>      <span class="nx">@tick</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">)</span>
+</span><span class='line'>  <span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
