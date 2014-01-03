@@ -4,7 +4,7 @@
   <title><![CDATA[Category: chai | Matteo Depalo's Blog]]></title>
   <link href="http://matteodepalo.github.io/blog/categories/chai/atom.xml" rel="self"/>
   <link href="http://matteodepalo.github.io/"/>
-  <updated>2014-01-03T19:50:39+01:00</updated>
+  <updated>2014-01-03T19:51:12+01:00</updated>
   <id>http://matteodepalo.github.io/</id>
   <author>
     <name><![CDATA[Matteo Depalo]]></name>
@@ -153,8 +153,9 @@ Ember.run &ndash;>
 
 <h2>Stubbing the server</h2>
 
-<p>In order to test interactions with a web server some people suggest to switch to FixtureAdapters during tests, but I don&rsquo;t like this approach because you wouldn&rsquo;t be testing the actual code of your application and some features, like associations, are implemented properly only on RESTAdapters.
-What I&rsquo;ve found useful instead is mocking the xhr object itself with the sinon.fakeServer. Suppose you want to stub the <code>/api/notices</code> endpoint, which should return a list of <code>notices</code>, you can do it like this:</p>
+<p>In order to test interactions with a web server some people suggest to switch to FixtureAdapters during tests, but I don&rsquo;t like this approach because you wouldn&rsquo;t be testing the actual code of your application and some features, like associations, are implemented properly only on RESTAdapters.</p>
+
+<p>What I&rsquo;ve found useful instead is mocking the xhr object itself with the sinon.fakeServer. Suppose you want to stub the <code>/api/notices</code> endpoint, which should return a list of <code>notices</code>, you can do it like this:</p>
 
 <p>```coffeescript
 window.server = sinon.fakeServer.create()</p>
