@@ -4,7 +4,7 @@
   <title><![CDATA[Category: mocha | Matteo Depalo's Blog]]></title>
   <link href="http://matteodepalo.github.io/blog/categories/mocha/atom.xml" rel="self"/>
   <link href="http://matteodepalo.github.io/"/>
-  <updated>2014-01-03T17:33:48+01:00</updated>
+  <updated>2014-01-03T17:49:12+01:00</updated>
   <id>http://matteodepalo.github.io/</id>
   <author>
     <name><![CDATA[Matteo Depalo]]></name>
@@ -147,9 +147,9 @@ Ember.run &ndash;>
 
 <p>```</p>
 
-<p>The <code>Ember.Test.MochaAdapter</code> will also enable the <a href="http://visionmedia.github.io/mocha/#interfaces">bdd</a> interface for you, so you can use stuff like <code>describe</code> and <code>it</code> during tests.</p>
-
 <p>I strongly suggest to read about how the Ember loop works  because sooner or later you will need that knowledge in order to debug tests. There is a good SO <a href="http://stackoverflow.com/questions/13597869/what-is-ember-runloop-and-how-does-it-work">answer</a> about it.</p>
+
+<p>The <code>Ember.Test.MochaAdapter</code> will also enable the <a href="http://visionmedia.github.io/mocha/#interfaces">bdd</a> interface for you, so you can use stuff like <code>describe</code> and <code>it</code> during tests.</p>
 
 <h2>Stubbing the server</h2>
 
