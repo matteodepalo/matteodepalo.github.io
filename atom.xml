@@ -4,7 +4,7 @@
   <title><![CDATA[Matteo Depalo's Blog]]></title>
   <link href="http://matteodepalo.github.io/atom.xml" rel="self"/>
   <link href="http://matteodepalo.github.io/"/>
-  <updated>2013-09-10T15:21:54+02:00</updated>
+  <updated>2014-01-03T17:23:35+01:00</updated>
   <id>http://matteodepalo.github.io/</id>
   <author>
     <name><![CDATA[Matteo Depalo]]></name>
@@ -14,7 +14,205 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Rails API documentation]]></title>
+    <title type="html"><![CDATA[Ember Integration Testing With Konacha]]></title>
+    <link href="http://matteodepalo.github.io/blog/2014/01/03/ember-integration-testing-with-konacha/"/>
+    <updated>2014-01-03T17:00:36+01:00</updated>
+    <id>http://matteodepalo.github.io/blog/2014/01/03/ember-integration-testing-with-konacha</id>
+    <content type="html"><![CDATA[<p>Ember is truly an awesome framework. The exciting community and the quality of the code brought joy to front-end development.
+That said, testing (more importantly integration testing) is a part of the framework that isn&rsquo;t quite there yet, and for various reasons:</p>
+
+<ul>
+<li>Lack of well defined best practices</li>
+<li>Few complete examples</li>
+<li>Debugging issues during tests is hard</li>
+</ul>
+
+
+<h2>Problems</h2>
+
+<p>The <a href="http://emberjs.com/guides/testing/integration/">guide</a> on the Ember website is a good start but it&rsquo;s not enough. It won&rsquo;t tell you anything about how to handle the run loop during tests, how to work with timers or how to configure the store.
+If you look around for examples they are either outdated or don&rsquo;t work with the framework you are using (Mocha, QUnit).</p>
+
+<h2>Towards a viable stack</h2>
+
+<p>After spending some time trying and failing I believe I&rsquo;ve reached a stack that makes me happy and that I consider solid enough:</p>
+
+<ul>
+<li>Rails (asset pipeline)</li>
+<li>Konacha (Chai and Mocha)</li>
+<li>Sinon</li>
+</ul>
+
+
+<p>Rails might seem an overkill for just the asset pipeline, but currently it&rsquo;s the most convenient way to build Ember applications. I&rsquo;ve tried <a href="https://github.com/stefanpenner/ember-app-kit">ember-app-kit</a> and although it&rsquo;s going in the right direction with the ES6 module system-aware resolver, it still has some rough edges like slow compilation times and a vast API surface.</p>
+
+<p>Once you go with Rails you can draw from a nice pool of libraries built around it. <a href="https://github.com/jfirebaugh/konacha">Konacha</a> is one of them.
+If you too think that testing like this is cool, keep reading:</p>
+
+<iframe width="771" height="434" src="http://matteodepalo.github.io//www.youtube.com/embed/heK78M6Ql9Q" frameborder="0" allowfullscreen></iframe>
+
+
+<p>Konacha uses <a href="http://visionmedia.github.io/mocha/">Mocha</a> and <a href="http://chaijs.com/">Chai</a> in combo. These libraries will make if you feel at home if you&rsquo;re coming from the RSpec world.
+It also spins up a web server on the port 3500 that you can visit to run your tests (don&rsquo;t worry there is still a command for your CI).</p>
+
+<p>The main problem is that Konacha uses Mocha to run tests and Ember supports only QUnit for integration testing out of the box; however teddyzeenny built an <a href="https://github.com/teddyzeenny/ember-mocha-adapter">adapter</a> for this purpose. Include it in the spec_helper file like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="c1">#= require sinon</span>
+</span><span class='line'><span class="c1">#= require application</span>
+</span><span class='line'><span class="c1">#= require ember-mocha-adapter</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">Ember.Test.adapter = </span><span class="nx">Ember</span><span class="p">.</span><span class="nx">Test</span><span class="p">.</span><span class="nx">MochaAdapter</span><span class="p">.</span><span class="nx">create</span><span class="p">()</span>
+</span><span class='line'><span class="nx">App</span><span class="p">.</span><span class="nx">setupForTesting</span><span class="p">()</span>
+</span><span class='line'><span class="nx">App</span><span class="p">.</span><span class="nx">injectTestHelpers</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now you can use Ember test helpers like <code>visit</code> or <code>click</code> without worrying about asynchronous behavior. Just chain them or call <code>then</code> if you want to execute some code after asynchronous actions have been performed.
+For example:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nx">describe</span> <span class="s">&#39;Notices - Integration&#39;</span><span class="p">,</span> <span class="nf">-&gt;</span>
+</span><span class='line'>  <span class="nx">beforeEach</span> <span class="nf">-&gt;</span>
+</span><span class='line'>    <span class="nx">visit</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">it</span> <span class="s">&#39;adds a Notice to the list&#39;</span><span class="p">,</span> <span class="nf">-&gt;</span>
+</span><span class='line'>    <span class="nx">fillIn</span><span class="p">(</span><span class="s">&#39;input[type=&quot;text&quot;]&#39;</span><span class="p">,</span> <span class="s">&#39;test&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">.</span><span class="nx">click</span><span class="p">(</span><span class="s">&#39;input[type=&quot;submit&quot;]&#39;</span><span class="p">).</span><span class="nx">then</span> <span class="nf">-&gt;</span>
+</span><span class='line'>      <span class="nx">find</span><span class="p">(</span><span class="s">&#39;.title&#39;</span><span class="p">).</span><span class="nx">text</span><span class="p">().</span><span class="nx">should</span><span class="p">.</span><span class="nx">equal</span><span class="p">(</span><span class="s">&#39;test&#39;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>There are some other important things to add to the spec_helper file:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nx">mocha</span><span class="p">.</span><span class="nx">globals</span><span class="p">([</span><span class="s">&#39;Ember&#39;</span><span class="p">,</span> <span class="s">&#39;DS&#39;</span><span class="p">,</span> <span class="s">&#39;App&#39;</span><span class="p">,</span> <span class="s">&#39;MD5&#39;</span><span class="p">])</span>
+</span><span class='line'><span class="nx">mocha</span><span class="p">.</span><span class="nx">timeout</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
+</span><span class='line'><span class="nv">chai.Assertion.includeStack = </span><span class="kc">true</span>
+</span><span class='line'><span class="nv">Konacha.reset = </span><span class="nx">Ember</span><span class="p">.</span><span class="nx">K</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$.fx.off = </span><span class="kc">true</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">afterEach</span> <span class="nf">-&gt;</span>
+</span><span class='line'>  <span class="nx">App</span><span class="p">.</span><span class="nx">reset</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">App</span><span class="p">.</span><span class="nx">setup</span><span class="p">()</span>
+</span><span class='line'><span class="nx">App</span><span class="p">.</span><span class="nx">advanceReadiness</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The first 4 lines will make Konacha play nicely with Ember. They will tell it to ignore leaks on globals and to avoid clearing the body of the application after each test, which is something that Ember doesn&rsquo;t like.</p>
+
+<p>Removing animations is always a good idea during testing, it will improve speed and cause less accidental problems.</p>
+
+<p>We also tell Mocha to reset the App after each test, which will destroy and reload everything bringing the router to its initial  status.</p>
+
+<p>The last lines are important if you have to setup your application before loading it. When you visit localhost:3500 Konacha will load the page and Ember will run App initializers and advance App readiness on document ready. In order to have full control over this process remember to add <code>App.deferReadiness()</code> at the end of the application.coffee file, after creating the App.</p>
+
+<p>If you need to perform some setup before resetting (<code>setup</code> is a custom method I&rsquo;ve added), override the reset method like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nb">window</span><span class="p">.</span><span class="nv">YourApplication = </span><span class="nx">Ember</span><span class="p">.</span><span class="nx">Application</span><span class="p">.</span><span class="nx">extend</span>
+</span><span class='line'>  <span class="nv">setup: </span><span class="nf">-&gt;</span>
+</span><span class='line'>    <span class="c1"># some setup code</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nv">reset: </span><span class="nf">-&gt;</span>
+</span><span class='line'>    <span class="nx">@setup</span><span class="p">()</span>
+</span><span class='line'>    <span class="nx">@_super</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Under the hood</h2>
+
+<p>There are some things that this spec_helper will do under the hood. First of all it will set <code>Ember.testing</code> to <code>true</code>. This will stop the auto-run feature of the Ember RunLoop during tests to give you control over what can run with async side effects and what cannot.</p>
+
+<p>For example if you want to create a fixture you need to wrap it in a <code>Ember.run</code> block or it won&rsquo;t execute all the async operation that will be scheduled by the application model adapter, like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nx">Ember</span><span class="p">.</span><span class="nx">run</span> <span class="nf">-&gt;</span>
+</span><span class='line'>  <span class="nv">notice = </span><span class="nx">App</span><span class="p">.</span><span class="nx">__container__</span><span class="p">.</span><span class="nx">lookup</span><span class="p">(</span><span class="s">&#39;store:main&#39;</span><span class="p">).</span><span class="nx">createRecord</span><span class="p">(</span><span class="s">&#39;notice&#39;</span><span class="p">,</span> <span class="p">{</span> <span class="nv">title: </span><span class="s">&#39;test&#39;</span> <span class="p">})</span>
+</span><span class='line'>  <span class="nx">notice</span><span class="p">.</span><span class="nx">save</span><span class="p">().</span><span class="nx">then</span> <span class="nf">-&gt;</span>
+</span><span class='line'>    <span class="c1"># check something</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>Ember.Test.MochaAdapter</code> will also enable the <a href="http://visionmedia.github.io/mocha/#interfaces">bdd</a> interface for you, so you can use stuff like <code>describe</code> and <code>it</code> during tests.</p>
+
+<p>I strongly suggest to read about how the Ember loop works  because sooner or later you will need that knowledge in order to debug tests. There is a good SO <a href="http://stackoverflow.com/questions/13597869/what-is-ember-runloop-and-how-does-it-work">answer</a> about it.</p>
+
+<h2>Gotchas</h2>
+
+<p>Beware of timers. If your application has long running or self scheduling timers, every function that uses <code>wait</code> under the hood, like <code>visit</code>, will never resolve. It has been discussed that you should be able to explicitly avoid waiting for specific timers during tests, but in the meanwhile you can use the following hack:</p>
+
+<p>Before:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nx">Ember</span><span class="p">.</span><span class="nx">run</span><span class="p">.</span><span class="nx">later</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nf">-&gt;</span>
+</span><span class='line'>  <span class="c1"># execute something</span>
+</span><span class='line'><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nx">setTimeout</span><span class="p">(</span><span class="o">=&gt;</span>
+</span><span class='line'>  <span class="nx">Ember</span><span class="p">.</span><span class="nx">run</span><span class="p">(</span><span class="o">=&gt;</span>
+</span><span class='line'>    <span class="c1"># execute something</span>
+</span><span class='line'>  <span class="p">)</span>
+</span><span class='line'><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This way you won&rsquo;t use the Ember internal setTimeout (which is not optimal), but you won&rsquo;t risk of executing async code outside of the run loop while allowing your tests to pass.</p>
+
+<h2>Conclusion</h2>
+
+<p>Ember is still a relatively young framework which means that you will have to work more to get simple stuff done. However I believe the community is very conscious of this and it&rsquo;s pushing towards a common and strong approach for getting started quickly and testing.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Rails API Documentation]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation/"/>
     <updated>2013-07-24T12:46:00+02:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation</id>
@@ -259,7 +457,7 @@ Of course documenting is exceptionally useful also for the mature stage of the p
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[minimum viable stack]]></title>
+    <title type="html"><![CDATA[Minimum Viable Stack]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/04/08/minimum-viable-stack/"/>
     <updated>2013-04-08T14:55:00+02:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/04/08/minimum-viable-stack</id>
@@ -332,7 +530,7 @@ The search feature is also useful.</p>
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[How I migrated from Heroku to Digital Ocean with Chef and Capistrano]]></title>
+    <title type="html"><![CDATA[How I Migrated From Heroku to Digital Ocean With Chef and Capistrano]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/"/>
     <updated>2013-03-07T11:24:00+01:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano</id>
@@ -1190,7 +1388,7 @@ The search feature is also useful.</p>
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Refactor: Replace Method with Method Object]]></title>
+    <title type="html"><![CDATA[Refactor: Replace Method With Method Object]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object/"/>
     <updated>2013-02-01T11:40:00+01:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object</id>
@@ -1400,7 +1598,7 @@ Altough it worked just fine, the <code>compile</code> class method of the <code>
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[How to create custom stylesheets dynamically with Rails and Sass]]></title>
+    <title type="html"><![CDATA[How to Create Custom Stylesheets Dynamically With Rails and Sass]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/"/>
     <updated>2013-01-31T12:24:00+01:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass</id>
@@ -1702,7 +1900,7 @@ Altough it worked just fine, the <code>compile</code> class method of the <code>
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Cube loves Geckoboard]]></title>
+    <title type="html"><![CDATA[Cube Loves Geckoboard]]></title>
     <link href="http://matteodepalo.github.io/blog/2012/07/23/cube-loves-geckoboard/"/>
     <updated>2012-07-23T12:02:00+02:00</updated>
     <id>http://matteodepalo.github.io/blog/2012/07/23/cube-loves-geckoboard</id>

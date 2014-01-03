@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: mocha | Matteo Depalo's Blog]]></title>
+  <link href="http://matteodepalo.github.io/blog/categories/mocha/atom.xml" rel="self"/>
+  <link href="http://matteodepalo.github.io/"/>
+  <updated>2014-01-03T17:23:35+01:00</updated>
+  <id>http://matteodepalo.github.io/</id>
+  <author>
+    <name><![CDATA[Matteo Depalo]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Ember integration testing with Konacha]]></title>
+    <link href="http://matteodepalo.github.io/blog/2014/01/03/ember-integration-testing-with-konacha/"/>
+    <updated>2014-01-03T17:00:36+01:00</updated>
+    <id>http://matteodepalo.github.io/blog/2014/01/03/ember-integration-testing-with-konacha</id>
+    <content type="html"><![CDATA[<p>Ember is truly an awesome framework. The exciting community and the quality of the code brought joy to front-end development.
+That said, testing (more importantly integration testing) is a part of the framework that isn&rsquo;t quite there yet, and for various reasons:</p>
+
+<ul>
+<li>Lack of well defined best practices</li>
+<li>Few complete examples</li>
+<li>Debugging issues during tests is hard</li>
+</ul>
+
+
+<h2>Problems</h2>
+
+<p>The <a href="http://emberjs.com/guides/testing/integration/">guide</a> on the Ember website is a good start but it&rsquo;s not enough. It won&rsquo;t tell you anything about how to handle the run loop during tests, how to work with timers or how to configure the store.
+If you look around for examples they are either outdated or don&rsquo;t work with the framework you are using (Mocha, QUnit).</p>
+
+<h2>Towards a viable stack</h2>
+
+<p>After spending some time trying and failing I believe I&rsquo;ve reached a stack that makes me happy and that I consider solid enough:</p>
+
+<ul>
+<li>Rails (asset pipeline)</li>
+<li>Konacha (Chai and Mocha)</li>
+<li>Sinon</li>
+</ul>
+
+
+<p>Rails might seem an overkill for just the asset pipeline, but currently it&rsquo;s the most convenient way to build Ember applications. I&rsquo;ve tried <a href="https://github.com/stefanpenner/ember-app-kit">ember-app-kit</a> and although it&rsquo;s going in the right direction with the ES6 module system-aware resolver, it still has some rough edges like slow compilation times and a vast API surface.</p>
+
+<p>Once you go with Rails you can draw from a nice pool of libraries built around it. <a href="https://github.com/jfirebaugh/konacha">Konacha</a> is one of them.
+If you too think that testing like this is cool, keep reading:</p>
+
+<iframe width="771" height="434" src="http://matteodepalo.github.io//www.youtube.com/embed/heK78M6Ql9Q" frameborder="0" allowfullscreen></iframe>
+
+
+<p>Konacha uses <a href="http://visionmedia.github.io/mocha/">Mocha</a> and <a href="http://chaijs.com/">Chai</a> in combo. These libraries will make if you feel at home if you&rsquo;re coming from the RSpec world.
+It also spins up a web server on the port 3500 that you can visit to run your tests (don&rsquo;t worry there is still a command for your CI).</p>
+
+<p>The main problem is that Konacha uses Mocha to run tests and Ember supports only QUnit for integration testing out of the box; however teddyzeenny built an <a href="https://github.com/teddyzeenny/ember-mocha-adapter">adapter</a> for this purpose. Include it in the spec_helper file like this:</p>
+
+<p>```coffeescript</p>
+
+<h1>= require sinon</h1>
+
+<h1>= require application</h1>
+
+<h1>= require ember-mocha-adapter</h1>
+
+<p>Ember.Test.adapter = Ember.Test.MochaAdapter.create()
+App.setupForTesting()
+App.injectTestHelpers()
+```</p>
+
+<p>Now you can use Ember test helpers like <code>visit</code> or <code>click</code> without worrying about asynchronous behavior. Just chain them or call <code>then</code> if you want to execute some code after asynchronous actions have been performed.
+For example:</p>
+
+<p>```coffeescript
+describe &lsquo;Notices &ndash; Integration&rsquo;, &ndash;>
+  beforeEach &ndash;></p>
+
+<pre><code>visit('/')
+</code></pre>
+
+<p>  it &lsquo;adds a Notice to the list&rsquo;, &ndash;></p>
+
+<pre><code>fillIn('input[type="text"]', 'test')
+.click('input[type="submit"]').then -&gt;
+  find('.title').text().should.equal('test')
+</code></pre>
+
+<p>```</p>
+
+<p>There are some other important things to add to the spec_helper file:</p>
+
+<p>```coffeescript
+mocha.globals([&lsquo;Ember&rsquo;, &lsquo;DS&rsquo;, &lsquo;App&rsquo;, &lsquo;MD5&rsquo;])
+mocha.timeout(500)
+chai.Assertion.includeStack = true
+Konacha.reset = Ember.K</p>
+
+<p>$.fx.off = true</p>
+
+<p>afterEach &ndash;>
+  App.reset()</p>
+
+<p>App.setup()
+App.advanceReadiness()
+```</p>
+
+<p>The first 4 lines will make Konacha play nicely with Ember. They will tell it to ignore leaks on globals and to avoid clearing the body of the application after each test, which is something that Ember doesn&rsquo;t like.</p>
+
+<p>Removing animations is always a good idea during testing, it will improve speed and cause less accidental problems.</p>
+
+<p>We also tell Mocha to reset the App after each test, which will destroy and reload everything bringing the router to its initial  status.</p>
+
+<p>The last lines are important if you have to setup your application before loading it. When you visit localhost:3500 Konacha will load the page and Ember will run App initializers and advance App readiness on document ready. In order to have full control over this process remember to add <code>App.deferReadiness()</code> at the end of the application.coffee file, after creating the App.</p>
+
+<p>If you need to perform some setup before resetting (<code>setup</code> is a custom method I&rsquo;ve added), override the reset method like this:</p>
+
+<p>```coffeescript
+window.YourApplication = Ember.Application.extend
+  setup: &ndash;></p>
+
+<pre><code># some setup code
+</code></pre>
+
+<p>  reset: &ndash;></p>
+
+<pre><code>@setup()
+@_super()
+</code></pre>
+
+<p>```</p>
+
+<h2>Under the hood</h2>
+
+<p>There are some things that this spec_helper will do under the hood. First of all it will set <code>Ember.testing</code> to <code>true</code>. This will stop the auto-run feature of the Ember RunLoop during tests to give you control over what can run with async side effects and what cannot.</p>
+
+<p>For example if you want to create a fixture you need to wrap it in a <code>Ember.run</code> block or it won&rsquo;t execute all the async operation that will be scheduled by the application model adapter, like this:</p>
+
+<p>```coffeescript
+Ember.run &ndash;>
+  notice = App.<strong>container</strong>.lookup(&lsquo;store:main&rsquo;).createRecord(&lsquo;notice&rsquo;, { title: &lsquo;test&rsquo; })
+  notice.save().then &ndash;></p>
+
+<pre><code># check something
+</code></pre>
+
+<p>```</p>
+
+<p>The <code>Ember.Test.MochaAdapter</code> will also enable the <a href="http://visionmedia.github.io/mocha/#interfaces">bdd</a> interface for you, so you can use stuff like <code>describe</code> and <code>it</code> during tests.</p>
+
+<p>I strongly suggest to read about how the Ember loop works  because sooner or later you will need that knowledge in order to debug tests. There is a good SO <a href="http://stackoverflow.com/questions/13597869/what-is-ember-runloop-and-how-does-it-work">answer</a> about it.</p>
+
+<h2>Gotchas</h2>
+
+<p>Beware of timers. If your application has long running or self scheduling timers, every function that uses <code>wait</code> under the hood, like <code>visit</code>, will never resolve. It has been discussed that you should be able to explicitly avoid waiting for specific timers during tests, but in the meanwhile you can use the following hack:</p>
+
+<p>Before:
+<code>coffeescript
+Ember.run.later(this, -&gt;
+  # execute something
+, 1000)
+</code></p>
+
+<p>After:
+```coffeescript
+setTimeout(=>
+  Ember.run(=></p>
+
+<pre><code># execute something
+</code></pre>
+
+<p>  )
+, 1000)
+```</p>
+
+<p>This way you won&rsquo;t use the Ember internal setTimeout (which is not optimal), but you won&rsquo;t risk of executing async code outside of the run loop while allowing your tests to pass.</p>
+
+<h2>Conclusion</h2>
+
+<p>Ember is still a relatively young framework which means that you will have to work more to get simple stuff done. However I believe the community is very conscious of this and it&rsquo;s pushing towards a common and strong approach for getting started quickly and testing.</p>
+]]></content>
+  </entry>
+  
+</feed>
