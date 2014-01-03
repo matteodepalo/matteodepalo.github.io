@@ -116,6 +116,31 @@ The `Ember.Test.MochaAdapter` will also enable the [bdd][6] interface for you, s
 
 I strongly suggest to read about how the Ember loop works  because sooner or later you will need that knowledge in order to debug tests. There is a good SO [answer][7] about it.
 
+## Stubbing the server
+
+In order to test interactions with a web server some people suggest to switch to FixtureAdapters during tests, but I don't like this approach because you wouldn't be testing the actual code of your application and some features, like associations, are implemented properly only on RESTAdapters.
+What I've found useful instead it's mocking the xhr object itself with the sinon.fakeServer. Suppose you want to stub the `/api/notices` endpoint which should return a list of `notices` you can do it like this:
+
+```coffeescript
+window.server = sinon.fakeServer.create()
+
+server.autoRespond = true
+
+server.respondWith('GET', '/api/notices', [
+  200,
+  { 'Content-Type': 'application/json' },
+  '{ "notices": [
+    {
+      "id": "a5babb5f-e5b2-4ccf-85fc-4893f8d08d1f",
+      "title": "test",
+      "created_at": "2014-01-02T14:01:02.810Z"
+    }
+  ]}'
+])
+```
+
+This way you won't need to change your adapter at runtime and tests will run superfast.
+
 ## Gotchas
 
 Beware of timers. If your application has long running or self scheduling timers, every function that uses `wait` under the hood, like `visit`, will never resolve. It has been discussed that you should be able to explicitly avoid waiting for specific timers during tests, but in the meanwhile you can use the following hack:
