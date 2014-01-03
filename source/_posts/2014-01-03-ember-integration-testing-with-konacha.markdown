@@ -36,7 +36,7 @@ If you too think that testing like this is cool, keep reading:
 Konacha uses [Mocha][2] and [Chai][3] in combo. These libraries will make if you feel at home if you're coming from the RSpec world.
 It also spins up a web server on the port 3500 that you can visit to run your tests (don't worry there is still a command for your CI).
 
-The main problem is that Konacha uses Mocha to run tests and Ember supports only QUnit for integration testing out of the box; however teddyzeenny built an [adapter][5] for this purpose. Include it in the spec_helper file like this:
+The main problem is that Konacha uses Mocha to run tests and Ember supports only QUnit for integration testing out of the box; fortunately teddyzeenny built an [adapter][5] for this purpose. Include it in the spec_helper file like this:
 
 ```coffeescript
 #= require sinon
