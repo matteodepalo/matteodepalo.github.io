@@ -112,9 +112,9 @@ Ember.run ->
     # check something
 ```
 
-The `Ember.Test.MochaAdapter` will also enable the [bdd][6] interface for you, so you can use stuff like `describe` and `it` during tests.
-
 I strongly suggest to read about how the Ember loop works  because sooner or later you will need that knowledge in order to debug tests. There is a good SO [answer][7] about it.
+
+The `Ember.Test.MochaAdapter` will also enable the [bdd][6] interface for you, so you can use stuff like `describe` and `it` during tests.
 
 ## Stubbing the server
 
