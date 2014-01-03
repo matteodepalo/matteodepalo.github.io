@@ -6,7 +6,7 @@ comments: true
 categories: [ember, testing, integration, konacha, mocha, chai]
 ---
 
-Ember is truly an awesome framework. The exciting community and the quality of the code brought joy to front-end development.
+Ember is truly an awesome framework. The exciting community and the quality of the code has brought joy to front-end development.
 That said, testing (more importantly integration testing) is a part of the framework that isn't quite there yet, and for various reasons:
 
 - Lack of well defined best practices
