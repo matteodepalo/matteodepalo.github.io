@@ -119,6 +119,7 @@ The `Ember.Test.MochaAdapter` will also enable the [bdd][6] interface for you, s
 ## Stubbing the server
 
 In order to test interactions with a web server some people suggest to switch to FixtureAdapters during tests, but I don't like this approach because you wouldn't be testing the actual code of your application and some features, like associations, are implemented properly only on RESTAdapters.
+
 What I've found useful instead is mocking the xhr object itself with the sinon.fakeServer. Suppose you want to stub the `/api/notices` endpoint, which should return a list of `notices`, you can do it like this:
 
 ```coffeescript
