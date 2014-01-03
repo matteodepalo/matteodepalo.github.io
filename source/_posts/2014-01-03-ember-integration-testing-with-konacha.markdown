@@ -148,18 +148,24 @@ Beware of timers. If your application has long running or self scheduling timers
 
 Before:
 ```coffeescript
-Ember.run.later(this, ->
-  # execute something
-, 1000)
+tick: ->
+  # do something
+
+  Ember.run.later(this, ->
+    @tick()
+  , 1000)
 ```
 
 After:
 ```coffeescript
-setTimeout(=>
-  Ember.run(=>
-    # execute something
-  )
-, 1000)
+tick: ->
+  # do something
+
+  setTimeout(=>
+    Ember.run(=>
+      @tick()
+    )
+  , 1000)
 ```
 
 This way you won't use the Ember internal setTimeout (which is not optimal), but you won't risk of executing async code outside of the run loop while allowing your tests to pass.
