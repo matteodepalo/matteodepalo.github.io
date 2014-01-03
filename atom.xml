@@ -4,7 +4,7 @@
   <title><![CDATA[Matteo Depalo's Blog]]></title>
   <link href="http://matteodepalo.github.io/atom.xml" rel="self"/>
   <link href="http://matteodepalo.github.io/"/>
-  <updated>2014-01-03T17:49:12+01:00</updated>
+  <updated>2014-01-03T17:50:03+01:00</updated>
   <id>http://matteodepalo.github.io/</id>
   <author>
     <name><![CDATA[Matteo Depalo]]></name>
@@ -176,7 +176,7 @@ For example:</p>
 <h2>Stubbing the server</h2>
 
 <p>In order to test interactions with a web server some people suggest to switch to FixtureAdapters during tests, but I don&rsquo;t like this approach because you wouldn&rsquo;t be testing the actual code of your application and some features, like associations, are implemented properly only on RESTAdapters.
-What I&rsquo;ve found useful instead it&rsquo;s mocking the xhr object itself with the sinon.fakeServer. Suppose you want to stub the <code>/api/notices</code> endpoint which should return a list of <code>notices</code> you can do it like this:</p>
+What I&rsquo;ve found useful instead it&rsquo;s mocking the xhr object itself with the sinon.fakeServer. Suppose you want to stub the <code>/api/notices</code> endpoint, which should return a list of <code>notices</code>, you can do it like this:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
