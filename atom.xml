@@ -4,7 +4,7 @@
   <title><![CDATA[Matteo Depalo's Blog]]></title>
   <link href="http://matteodepalo.github.io/atom.xml" rel="self"/>
   <link href="http://matteodepalo.github.io/"/>
-  <updated>2014-01-03T17:24:48+01:00</updated>
+  <updated>2014-01-03T17:32:52+01:00</updated>
   <id>http://matteodepalo.github.io/</id>
   <author>
     <name><![CDATA[Matteo Depalo]]></name>
@@ -172,6 +172,46 @@ For example:</p>
 <p>The <code>Ember.Test.MochaAdapter</code> will also enable the <a href="http://visionmedia.github.io/mocha/#interfaces">bdd</a> interface for you, so you can use stuff like <code>describe</code> and <code>it</code> during tests.</p>
 
 <p>I strongly suggest to read about how the Ember loop works  because sooner or later you will need that knowledge in order to debug tests. There is a good SO <a href="http://stackoverflow.com/questions/13597869/what-is-ember-runloop-and-how-does-it-work">answer</a> about it.</p>
+
+<h2>Stubbing the server</h2>
+
+<p>In order to test interactions with a web server some people suggest to switch to FixtureAdapters during tests, but I don&rsquo;t like this approach because you wouldn&rsquo;t be testing the actual code of your application and some features, like associations, are implemented properly only on RESTAdapters.
+What I&rsquo;ve found useful instead it&rsquo;s mocking the xhr object itself with the sinon.fakeServer. Suppose you want to stub the <code>/api/notices</code> endpoint which should return a list of <code>notices</code> you can do it like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='coffeescript'><span class='line'><span class="nb">window</span><span class="p">.</span><span class="nv">server = </span><span class="nx">sinon</span><span class="p">.</span><span class="nx">fakeServer</span><span class="p">.</span><span class="nx">create</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">server.autoRespond = </span><span class="kc">true</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">server</span><span class="p">.</span><span class="nx">respondWith</span><span class="p">(</span><span class="s">&#39;GET&#39;</span><span class="p">,</span> <span class="s">&#39;/api/notices&#39;</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>  <span class="mi">200</span><span class="p">,</span>
+</span><span class='line'>  <span class="p">{</span> <span class="s">&#39;Content-Type&#39;</span><span class="o">:</span> <span class="s">&#39;application/json&#39;</span> <span class="p">},</span>
+</span><span class='line'>  <span class="s">&#39;{ &quot;notices&quot;: [</span>
+</span><span class='line'><span class="s">    {</span>
+</span><span class='line'><span class="s">      &quot;id&quot;: &quot;a5babb5f-e5b2-4ccf-85fc-4893f8d08d1f&quot;,</span>
+</span><span class='line'><span class="s">      &quot;title&quot;: &quot;test&quot;,</span>
+</span><span class='line'><span class="s">      &quot;created_at&quot;: &quot;2014-01-02T14:01:02.810Z&quot;</span>
+</span><span class='line'><span class="s">    }</span>
+</span><span class='line'><span class="s">  ]}&#39;</span>
+</span><span class='line'><span class="p">])</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This way you won&rsquo;t need to change your adapter at runtime and tests will run superfast.</p>
 
 <h2>Gotchas</h2>
 
