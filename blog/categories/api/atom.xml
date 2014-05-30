@@ -4,7 +4,7 @@
   <title><![CDATA[Category: api | Matteo Depalo's Blog]]></title>
   <link href="http://matteodepalo.github.io/blog/categories/api/atom.xml" rel="self"/>
   <link href="http://matteodepalo.github.io/"/>
-  <updated>2014-01-03T20:06:25+01:00</updated>
+  <updated>2014-05-30T10:47:43+01:00</updated>
   <id>http://matteodepalo.github.io/</id>
   <author>
     <name><![CDATA[Matteo Depalo]]></name>
@@ -16,7 +16,7 @@
   <entry>
     <title type="html"><![CDATA[Rails API documentation]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation/"/>
-    <updated>2013-07-24T12:46:00+02:00</updated>
+    <updated>2013-07-24T12:46:00+01:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation</id>
     <content type="html"><![CDATA[<p>Lately I&rsquo;ve been working on a new project for mobile called Playround. My job is to design and implement the API. I must say that with the help of Rails 4 and Rails API the experience has been the smoothest possible. With requests and models specs I can test the whole application at blazing speeds.
 At a certain point however I faced an issue: documentation.</p>

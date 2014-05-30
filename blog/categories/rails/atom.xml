@@ -4,7 +4,7 @@
   <title><![CDATA[Category: rails | Matteo Depalo's Blog]]></title>
   <link href="http://matteodepalo.github.io/blog/categories/rails/atom.xml" rel="self"/>
   <link href="http://matteodepalo.github.io/"/>
-  <updated>2014-01-03T20:06:25+01:00</updated>
+  <updated>2014-05-30T10:47:43+01:00</updated>
   <id>http://matteodepalo.github.io/</id>
   <author>
     <name><![CDATA[Matteo Depalo]]></name>
@@ -16,7 +16,7 @@
   <entry>
     <title type="html"><![CDATA[Rails API documentation]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation/"/>
-    <updated>2013-07-24T12:46:00+02:00</updated>
+    <updated>2013-07-24T12:46:00+01:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation</id>
     <content type="html"><![CDATA[<p>Lately I&rsquo;ve been working on a new project for mobile called Playround. My job is to design and implement the API. I must say that with the help of Rails 4 and Rails API the experience has been the smoothest possible. With requests and models specs I can test the whole application at blazing speeds.
 At a certain point however I faced an issue: documentation.</p>
@@ -170,7 +170,7 @@ POST /v1/rounds</p>
   <entry>
     <title type="html"><![CDATA[How I migrated from Heroku to Digital Ocean with Chef and Capistrano]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/"/>
-    <updated>2013-03-07T11:24:00+01:00</updated>
+    <updated>2013-03-07T11:24:00+00:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano</id>
     <content type="html"><![CDATA[<p>UPDATE:</p>
 
@@ -725,7 +725,7 @@ cap deploy
   <entry>
     <title type="html"><![CDATA[Refactor: Replace Method with Method Object]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object/"/>
-    <updated>2013-02-01T11:40:00+01:00</updated>
+    <updated>2013-02-01T11:40:00+00:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object</id>
     <content type="html"><![CDATA[<p>In my previous <a href="http://matteodepalo.github.com/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/">post</a> I described how to implement a feature that allows our customers to create custom stylesheets for their widget.
 Altough it worked just fine, the <code>compile</code> class method of the <code>CustomTheme</code> class was blatantly big, so I decided to refactor it.</p>
@@ -879,7 +879,7 @@ end
   <entry>
     <title type="html"><![CDATA[How to create custom stylesheets dynamically with Rails and Sass]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/"/>
-    <updated>2013-01-31T12:24:00+01:00</updated>
+    <updated>2013-01-31T12:24:00+00:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass</id>
     <content type="html"><![CDATA[<p>At <a href="http://goresponsa.com">Responsa</a> we have the need to create custom stylesheets for our widget administrators. In order to accomplish this we leverage the power of Sass and the Rails asset pipeline.</p>
 
@@ -1073,6 +1073,8 @@ end
 <p><code>ruby
 &lt;%= stylesheet_link_tag @custom_theme.asset_url %&gt;
 </code></p>
+
+<p>Check out my <a href="https://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object/">next blog post</a> which goes into a refactor of this code!</p>
 ]]></content>
   </entry>
   

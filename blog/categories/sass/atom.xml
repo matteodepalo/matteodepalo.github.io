@@ -4,7 +4,7 @@
   <title><![CDATA[Category: sass | Matteo Depalo's Blog]]></title>
   <link href="http://matteodepalo.github.io/blog/categories/sass/atom.xml" rel="self"/>
   <link href="http://matteodepalo.github.io/"/>
-  <updated>2014-01-03T20:06:25+01:00</updated>
+  <updated>2014-05-30T10:47:43+01:00</updated>
   <id>http://matteodepalo.github.io/</id>
   <author>
     <name><![CDATA[Matteo Depalo]]></name>
@@ -16,7 +16,7 @@
   <entry>
     <title type="html"><![CDATA[How to create custom stylesheets dynamically with Rails and Sass]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/"/>
-    <updated>2013-01-31T12:24:00+01:00</updated>
+    <updated>2013-01-31T12:24:00+00:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass</id>
     <content type="html"><![CDATA[<p>At <a href="http://goresponsa.com">Responsa</a> we have the need to create custom stylesheets for our widget administrators. In order to accomplish this we leverage the power of Sass and the Rails asset pipeline.</p>
 
@@ -210,6 +210,8 @@ end
 <p><code>ruby
 &lt;%= stylesheet_link_tag @custom_theme.asset_url %&gt;
 </code></p>
+
+<p>Check out my <a href="https://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object/">next blog post</a> which goes into a refactor of this code!</p>
 ]]></content>
   </entry>
   

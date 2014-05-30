@@ -4,7 +4,7 @@
   <title><![CDATA[Category: nginx | Matteo Depalo's Blog]]></title>
   <link href="http://matteodepalo.github.io/blog/categories/nginx/atom.xml" rel="self"/>
   <link href="http://matteodepalo.github.io/"/>
-  <updated>2014-01-03T20:06:25+01:00</updated>
+  <updated>2014-05-30T10:47:43+01:00</updated>
   <id>http://matteodepalo.github.io/</id>
   <author>
     <name><![CDATA[Matteo Depalo]]></name>
@@ -16,7 +16,7 @@
   <entry>
     <title type="html"><![CDATA[How I migrated from Heroku to Digital Ocean with Chef and Capistrano]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/"/>
-    <updated>2013-03-07T11:24:00+01:00</updated>
+    <updated>2013-03-07T11:24:00+00:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano</id>
     <content type="html"><![CDATA[<p>UPDATE:</p>
 

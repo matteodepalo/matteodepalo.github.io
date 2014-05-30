@@ -4,7 +4,7 @@
   <title><![CDATA[Matteo Depalo's Blog]]></title>
   <link href="http://matteodepalo.github.io/atom.xml" rel="self"/>
   <link href="http://matteodepalo.github.io/"/>
-  <updated>2014-01-03T20:06:25+01:00</updated>
+  <updated>2014-05-30T10:47:43+01:00</updated>
   <id>http://matteodepalo.github.io/</id>
   <author>
     <name><![CDATA[Matteo Depalo]]></name>
@@ -16,7 +16,7 @@
   <entry>
     <title type="html"><![CDATA[Ember Integration Testing With Konacha]]></title>
     <link href="http://matteodepalo.github.io/blog/2014/01/03/ember-integration-testing-with-konacha/"/>
-    <updated>2014-01-03T17:00:36+01:00</updated>
+    <updated>2014-01-03T16:00:36+00:00</updated>
     <id>http://matteodepalo.github.io/blog/2014/01/03/ember-integration-testing-with-konacha</id>
     <content type="html"><![CDATA[<p>Ember is truly an awesome framework. The exciting community and the quality of the code has brought joy to front-end development.
 That said, testing (more importantly integration testing) is a part of the framework that isn&rsquo;t quite there yet, and for various reasons:</p>
@@ -267,7 +267,7 @@ For example:</p>
   <entry>
     <title type="html"><![CDATA[Rails API Documentation]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation/"/>
-    <updated>2013-07-24T12:46:00+02:00</updated>
+    <updated>2013-07-24T12:46:00+01:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/07/24/rails-api-documentation</id>
     <content type="html"><![CDATA[<p>Lately I&rsquo;ve been working on a new project for mobile called Playround. My job is to design and implement the API. I must say that with the help of Rails 4 and Rails API the experience has been the smoothest possible. With requests and models specs I can test the whole application at blazing speeds.
 At a certain point however I faced an issue: documentation.</p>
@@ -512,7 +512,7 @@ Of course documenting is exceptionally useful also for the mature stage of the p
   <entry>
     <title type="html"><![CDATA[Minimum Viable Stack]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/04/08/minimum-viable-stack/"/>
-    <updated>2013-04-08T14:55:00+02:00</updated>
+    <updated>2013-04-08T14:55:00+01:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/04/08/minimum-viable-stack</id>
     <content type="html"><![CDATA[<p>After <a href="http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/">migrating to my own VPS solution from Heroku</a> at <a href="https://goresponsa.com">Responsa</a>, I&rsquo;ve traveled across the internet land in order to select and build a solid production stack.
 Now that I think I&rsquo;ve reached it I want to share my choices in case anyone has to go through the same process.</p>
@@ -585,7 +585,7 @@ The search feature is also useful.</p>
   <entry>
     <title type="html"><![CDATA[How I Migrated From Heroku to Digital Ocean With Chef and Capistrano]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano/"/>
-    <updated>2013-03-07T11:24:00+01:00</updated>
+    <updated>2013-03-07T11:24:00+00:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/03/07/how-i-migrated-from-heroku-to-digital-ocean-with-chef-and-capistrano</id>
     <content type="html"><![CDATA[<p>UPDATE:</p>
 
@@ -1443,7 +1443,7 @@ The search feature is also useful.</p>
   <entry>
     <title type="html"><![CDATA[Refactor: Replace Method With Method Object]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object/"/>
-    <updated>2013-02-01T11:40:00+01:00</updated>
+    <updated>2013-02-01T11:40:00+00:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object</id>
     <content type="html"><![CDATA[<p>In my previous <a href="http://matteodepalo.github.com/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/">post</a> I described how to implement a feature that allows our customers to create custom stylesheets for their widget.
 Altough it worked just fine, the <code>compile</code> class method of the <code>CustomTheme</code> class was blatantly big, so I decided to refactor it.</p>
@@ -1653,7 +1653,7 @@ Altough it worked just fine, the <code>compile</code> class method of the <code>
   <entry>
     <title type="html"><![CDATA[How to Create Custom Stylesheets Dynamically With Rails and Sass]]></title>
     <link href="http://matteodepalo.github.io/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass/"/>
-    <updated>2013-01-31T12:24:00+01:00</updated>
+    <updated>2013-01-31T12:24:00+00:00</updated>
     <id>http://matteodepalo.github.io/blog/2013/01/31/how-to-create-custom-stylesheets-dynamically-with-rails-and-sass</id>
     <content type="html"><![CDATA[<p>At <a href="http://goresponsa.com">Responsa</a> we have the need to create custom stylesheets for our widget administrators. In order to accomplish this we leverage the power of Sass and the Rails asset pipeline.</p>
 
@@ -1949,13 +1949,15 @@ Altough it worked just fine, the <code>compile</code> class method of the <code>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;%=</span> <span class="n">stylesheet_link_tag</span> <span class="vi">@custom_theme</span><span class="o">.</span><span class="n">asset_url</span> <span class="o">%&gt;</span>
 </span></code></pre></td></tr></table></div></figure>
 
+
+<p>Check out my <a href="https://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object/">next blog post</a> which goes into a refactor of this code!</p>
 ]]></content>
   </entry>
   
   <entry>
     <title type="html"><![CDATA[Cube Loves Geckoboard]]></title>
     <link href="http://matteodepalo.github.io/blog/2012/07/23/cube-loves-geckoboard/"/>
-    <updated>2012-07-23T12:02:00+02:00</updated>
+    <updated>2012-07-23T12:02:00+01:00</updated>
     <id>http://matteodepalo.github.io/blog/2012/07/23/cube-loves-geckoboard</id>
     <content type="html"><![CDATA[<h2>Introduction</h2>
 
