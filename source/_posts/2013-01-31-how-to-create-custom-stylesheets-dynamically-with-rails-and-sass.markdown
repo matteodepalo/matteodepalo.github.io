@@ -174,3 +174,5 @@ Finally we use the asset url in our template:
 ```ruby
 <%= stylesheet_link_tag @custom_theme.asset_url %>
 ```
+
+Check out my [next blog post](https://matteodepalo.github.io/blog/2013/02/01/refactor-replace-method-with-method-object/) which goes into a refactor of this code!
